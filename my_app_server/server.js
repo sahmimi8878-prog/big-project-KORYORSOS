@@ -2,7 +2,7 @@ const http = require('http');
 const bp = require('body-parser');
 const express = require('express');
 const cors = require('cors');
-const userModel = require('./models/users');
+const userModel = require('./models/user');
 const jwt = require('./libs/jwt');
 const dateUtil = require('./libs/date_utils');
 

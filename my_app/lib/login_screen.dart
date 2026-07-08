@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:my_app/config/app_config.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
  
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,6 +41,21 @@ class _LoginScreenState extends State<LoginScreen> {
     _signUpRecognizer.dispose();
     super.dispose();
   }
+
+  Future<void> login() async {
+  final response = await http.post(
+    Uri.parse(AppConfig.authenRequest),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: jsonEncode({
+      "authen_request":
+          "${_emailController.text}:${_passwordController.text}",
+    }),
+  );
+
+  print(response.body);
+}
  
   @override
   Widget build(BuildContext context) {
