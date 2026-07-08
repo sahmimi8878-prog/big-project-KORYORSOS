@@ -26,16 +26,10 @@ const checkAccessToken = async (req, res, next) => {
         token = req.body.token;
     }
 
-    if (!token) {
-        return res.json({
-            isError: true,
-            errorMessage: "ยังไม่ได้เข้าสู่ระบบ"
-        });
-    }
-
     try {
         const decoded = await jwt.verify(token);
         req.decoded = decoded;
+        console.log(req.decoded);
         next();
     } catch (err) {
         return res.json({
@@ -55,9 +49,13 @@ app.get('/api/users/:userId', async (req, res) => {
 
 app.post("/api/authen/authen_request", async (req, res) => {
 
+    console.log(req.body.authen_request);
+
     const authenRequest = req.body.authen_request;
 
     const result = await userModel.checkAuthenRequest(authenRequest);
+
+    console.log(result);
 
     let response;
 
@@ -109,6 +107,8 @@ app.post("/api/authen/access_request", async (req, res) => {
             authenToken
         );
 
+        console.log(result);
+
         if (result.isError) {
 
             response = {
@@ -127,6 +127,8 @@ app.post("/api/authen/access_request", async (req, res) => {
             };
 
             const accessToken = jwt.sign(payload);
+
+            console.log(accessToken);
 
             response = {
                 isError: false,
@@ -149,7 +151,10 @@ app.post("/api/authen/access_request", async (req, res) => {
     res.json(response);
 
 });
+
 app.get("/api/profile", checkAccessToken, async (req, res) => {
+
+    console.log(req.decoded);
 
     const result = await userModel.getUserById(req.decoded.user_id);
 
