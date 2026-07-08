@@ -6,28 +6,30 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_app/utils/data_utils.dart';
- 
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
- 
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
- 
+
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
- 
+
   bool _rememberMe = false;
   bool _obscurePassword = true;
   late final TapGestureRecognizer _signUpRecognizer;
- 
-  static const Color primaryPurple = Color(0xFF8B7FD8);
-  static const Color lightPurple = Color(0xFFB9AEEB);
-  static const Color bgLavender = Color(0xFFC9BFEE);
-  static const Color pinkBlob = Color(0xFFF3A6C6);
- //แก้ไข
+
+  static const Color primaryPurple = Color(0xFFE78BCB); // ชมพูม่วง
+  static const Color lightPurple = Color(0xFFFCE9F6); // ชมพูอ่อน
+  static const Color bgLavender = Color(0xFFF7EEFF); // พื้นหลังลาเวนเดอร์อ่อน
+  static const Color pinkBlob = Color(0xFFFFC5E3); // ลูกบอลชมพู
+  static const Color cardColor = Color(0xFFFFFDFF); // สีการ์ด
+  static const Color titleColor = Color(0xFF8E5BAE); // สีหัวข้อ
+  //แก้ไข
   @override
   void initState() {
     super.initState();
@@ -36,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // TODO: ไปยังหน้า Sign up
       };
   }
- 
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -46,116 +48,91 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<(bool, String, String)> _authenRequest() async {
-  String username = _emailController.text;
+    String username = _emailController.text;
 
-  DateTime now = DateTime.now();
-  String formattedDate = DateUtil.getFormattedDate(now);
+    DateTime now = DateTime.now();
+    String formattedDate = DateUtil.getFormattedDate(now);
 
-  String authenRequest = sha256
-      .convert(utf8.encode("$username&$formattedDate"))
-      .toString();
+    String authenRequest = sha256
+        .convert(utf8.encode("$username&$formattedDate"))
+        .toString();
 
-  final response = await http.post(
-    Uri.parse(AppConfig.authenRequest),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: jsonEncode({
-      "authen_request": authenRequest,
-    }),
-  );
-
-  final json = jsonDecode(response.body);
-
-  return (
-    json["isError"] as bool,
-    json["data"] as String,
-    json["errorMessage"] as String,
-  );
-}
-
-
-Future<({bool isError, String data, String errorMessage})> _accessRequest(
-    String authenToken) async {
-
-  String username = _emailController.text;
-  String password = _passwordController.text;
-
-  String passwordHash =
-      sha256.convert(utf8.encode(password)).toString();
-
-  String authenSignature = sha256
-      .convert(
-        utf8.encode(
-          "$username&$passwordHash&$authenToken",
-        ),
-      )
-      .toString();
-
-  final response = await http.post(
-    Uri.parse(AppConfig.accessRequest),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: jsonEncode({
-      "authen_signature": authenSignature,
-      "authen_token": authenToken,
-    }),
-  );
-
-  final json = jsonDecode(response.body);
-
-  if (!json["isError"]) {
-    SharedPreferences prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      "access_token",
-      json["data"]["access_token"],
+    final response = await http.post(
+      Uri.parse(AppConfig.authenRequest),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"authen_request": authenRequest}),
     );
 
-    await prefs.setString(
-      "username",
-      username,
+    final json = jsonDecode(response.body);
+
+    return (
+      json["isError"] as bool,
+      json["data"] as String,
+      json["errorMessage"] as String,
     );
   }
 
-  return (
+  Future<({bool isError, String data, String errorMessage})> _accessRequest(
+    String authenToken,
+  ) async {
+    String username = _emailController.text;
+    String password = _passwordController.text;
+
+    String passwordHash = sha256.convert(utf8.encode(password)).toString();
+
+    String authenSignature = sha256
+        .convert(utf8.encode("$username&$passwordHash&$authenToken"))
+        .toString();
+
+    final response = await http.post(
+      Uri.parse(AppConfig.accessRequest),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "authen_signature": authenSignature,
+        "authen_token": authenToken,
+      }),
+    );
+
+    final json = jsonDecode(response.body);
+
+    if (!json["isError"]) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString("access_token", json["data"]["access_token"]);
+
+      await prefs.setString("username", username);
+    }
+
+    return (
       isError: (json["isError"] ?? true) as bool,
       data: json["data"]["access_token"] as String,
       errorMessage: json["errorMessage"] as String,
     );
-}
-
-void _doLogin(BuildContext context) async {
-  var (isError, authenToken, errorMessage) = await _authenRequest();
-
-
-  if (isError) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        content: Text(errorMessage),
-      ),
-    );
-    return;
   }
 
-  var result = await _accessRequest(authenToken);
+  void _doLogin(BuildContext context) async {
+    var (isError, authenToken, errorMessage) = await _authenRequest();
 
-  if (!result.isError) {
-    print(result.data);
-  } else {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        content: Text(result.errorMessage),
-      ),
-    );
+    if (isError) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(content: Text(errorMessage)),
+      );
+      return;
+    }
+
+    var result = await _accessRequest(authenToken);
+
+    if (!result.isError) {
+      print(result.data);
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(content: Text(result.errorMessage)),
+      );
+    }
   }
-}
 
- 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -176,12 +153,15 @@ void _doLogin(BuildContext context) async {
             _buildBlob(top: 40, right: -70, size: 130, opacity: 0.45),
             _buildBlob(bottom: -70, left: -40, size: 180, opacity: 0.5),
             _buildBlob(bottom: 60, right: -60, size: 140, opacity: 0.45),
- 
+
             // ----- เนื้อหาหลัก -----
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -198,7 +178,7 @@ void _doLogin(BuildContext context) async {
       ),
     );
   }
- 
+
   Widget _buildBlob({
     double? top,
     double? bottom,
@@ -218,16 +198,13 @@ void _doLogin(BuildContext context) async {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(
-            colors: [
-              pinkBlob.withOpacity(opacity),
-              pinkBlob.withOpacity(0.0),
-            ],
+            colors: [pinkBlob.withValues(alpha: opacity), pinkBlob.withValues(alpha: 0.0)],
           ),
         ),
       ),
     );
   }
- 
+
   Widget _buildCard() {
     return Container(
       width: double.infinity,
@@ -237,7 +214,7 @@ void _doLogin(BuildContext context) async {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -249,6 +226,18 @@ void _doLogin(BuildContext context) async {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20), // ความโค้งของมุม
+                child: Image.asset(
+                  'assets/images/logo3.jpg',
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             const Text(
               "Log in",
               style: TextStyle(
@@ -258,7 +247,7 @@ void _doLogin(BuildContext context) async {
               ),
             ),
             const SizedBox(height: 24),
- 
+
             // ----- Email -----
             _fieldLabel("Email"),
             const SizedBox(height: 6),
@@ -274,7 +263,7 @@ void _doLogin(BuildContext context) async {
               },
             ),
             const SizedBox(height: 18),
- 
+
             // ----- Password -----
             _fieldLabel("Password"),
             const SizedBox(height: 6),
@@ -303,7 +292,7 @@ void _doLogin(BuildContext context) async {
               },
             ),
             const SizedBox(height: 8),
- 
+
             // ----- Remember me / Forgot password -----
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -320,7 +309,8 @@ void _doLogin(BuildContext context) async {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                        onChanged: (v) =>
+                            setState(() => _rememberMe = v ?? false),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -345,7 +335,7 @@ void _doLogin(BuildContext context) async {
               ],
             ),
             const SizedBox(height: 22),
- 
+
             // ----- ปุ่ม SIGN IN -----
             SizedBox(
               width: double.infinity,
@@ -368,7 +358,7 @@ void _doLogin(BuildContext context) async {
                   ),
                 ),
                 child: const Text(
-                  "SIGN IN",
+                  "LOG IN",
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -378,7 +368,7 @@ void _doLogin(BuildContext context) async {
               ),
             ),
             const SizedBox(height: 18),
- 
+
             // ----- Not registered? Sign up -----
             Center(
               child: RichText(
@@ -403,7 +393,7 @@ void _doLogin(BuildContext context) async {
       ),
     );
   }
- 
+
   Widget _fieldLabel(String text) {
     return Text(
       text,
@@ -414,13 +404,13 @@ void _doLogin(BuildContext context) async {
       ),
     );
   }
- 
+
   InputDecoration _inputDecoration({required String hint}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.black26, fontSize: 14),
       filled: true,
-      fillColor: lightPurple.withOpacity(0.08),
+      fillColor: lightPurple.withValues(alpha: 0.08),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -440,7 +430,7 @@ void _doLogin(BuildContext context) async {
       ),
     );
   }
- 
+
   Widget _buildSocialRow() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -460,7 +450,7 @@ void _doLogin(BuildContext context) async {
       ],
     );
   }
- 
+
   Widget _socialButton({
     IconData? icon,
     String? letter,
@@ -478,7 +468,7 @@ void _doLogin(BuildContext context) async {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
