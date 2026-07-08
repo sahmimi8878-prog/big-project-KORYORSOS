@@ -3,6 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:my_app/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_app/utils/data_utils.dart';
  
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,20 +45,116 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> login() async {
+  Future<(bool, String, String)> _authenRequest() async {
+  String username = _emailController.text;
+
+  DateTime now = DateTime.now();
+  String formattedDate = DateUtil.getFormattedDate(now);
+
+  String authenRequest = sha256
+      .convert(utf8.encode("$username&$formattedDate"))
+      .toString();
+
   final response = await http.post(
     Uri.parse(AppConfig.authenRequest),
     headers: {
       "Content-Type": "application/json",
     },
     body: jsonEncode({
-      "authen_request":
-          "${_emailController.text}:${_passwordController.text}",
+      "authen_request": authenRequest,
     }),
   );
 
-  print(response.body);
+  final json = jsonDecode(response.body);
+
+  return (
+    json["isError"] as bool,
+    json["data"] as String,
+    json["errorMessage"] as String,
+  );
 }
+
+
+Future<({bool isError, String data, String errorMessage})> _accessRequest(
+    String authenToken) async {
+
+  String username = _emailController.text;
+  String password = _passwordController.text;
+
+  String passwordHash =
+      sha256.convert(utf8.encode(password)).toString();
+
+  String authenSignature = sha256
+      .convert(
+        utf8.encode(
+          "$username&$passwordHash&$authenToken",
+        ),
+      )
+      .toString();
+
+  final response = await http.post(
+    Uri.parse(AppConfig.accessRequest),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: jsonEncode({
+      "authen_signature": authenSignature,
+      "authen_token": authenToken,
+    }),
+  );
+
+  final json = jsonDecode(response.body);
+
+  if (!json["isError"]) {
+    SharedPreferences prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      "access_token",
+      json["data"]["access_token"],
+    );
+
+    await prefs.setString(
+      "username",
+      username,
+    );
+  }
+
+  return (
+      isError: (json["isError"] ?? true) as bool,
+      data: json["data"]["access_token"] as String,
+      errorMessage: json["errorMessage"] as String,
+    );
+}
+
+void _doLogin(BuildContext context) async {
+  var (isError, authenToken, errorMessage) = await _authenRequest();
+
+
+  if (isError) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        content: Text(errorMessage),
+      ),
+    );
+    return;
+  }
+
+  var result = await _accessRequest(authenToken);
+
+  if (!result.isError) {
+    print(result.data);
+  } else {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        content: Text(result.errorMessage),
+      ),
+    );
+  }
+}
+
  
   @override
   Widget build(BuildContext context) {
@@ -257,6 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('กำลังเข้าสู่ระบบ...')),
                     );
+                    _doLogin(context);
                   }
                 },
                 style: ElevatedButton.styleFrom(
