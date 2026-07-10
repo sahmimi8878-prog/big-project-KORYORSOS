@@ -9,15 +9,7 @@ module.exports = {
     try {
       conn = await pool.getConnection();
 
-      const sql = `
-        SELECT
-          user_id,
-          username,
-          firstname,
-          lastname,
-          role_id
-        FROM users
-        WHERE user_id = ?`;
+      const sql = `SELECT user_id, username, firstname, lastname, role_id FROM users WHERE user_id = ?`;
 
       const rows = await conn.query(sql, [userId]);
 
@@ -31,7 +23,8 @@ module.exports = {
         errorMessage: error.message
       };
     } finally {
-      if (conn) conn.release();
+      if (conn)
+        conn.release();
     }
 
     return result;
@@ -85,13 +78,7 @@ module.exports = {
       conn = await pool.getConnection();
 
       const sql = `
-        SELECT
-          user_id,
-          username,
-          firstname,
-          lastname,
-          role_id
-        FROM users
+        SELECT user_id, username, firstname, lastname, role_id FROM users
         WHERE SHA2(CONCAT(username, '&', password, '&', ?), 256) = ?`;
 
       const rows = await conn.query(sql, [
