@@ -23,13 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   late final TapGestureRecognizer _signUpRecognizer;
 
-  static const Color primaryPurple = Color(0xFFE78BCB); // ชมพูม่วง
-  static const Color lightPurple = Color(0xFFFCE9F6); // ชมพูอ่อน
-  static const Color bgLavender = Color(0xFFF7EEFF); // พื้นหลังลาเวนเดอร์อ่อน
-  static const Color pinkBlob = Color(0xFFFFC5E3); // ลูกบอลชมพู
-  static const Color cardColor = Color(0xFFFFFDFF); // สีการ์ด
-  static const Color titleColor = Color(0xFF8E5BAE); // สีหัวข้อ
-  //แก้ไข
   @override
   void initState() {
     super.initState();
@@ -134,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -141,64 +135,33 @@ class _LoginScreenState extends State<LoginScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [bgLavender, Color(0xFFDCD3F5)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFF5FC), Color(0xFFF8EEFF), Color(0xFFEEE8FF)],
           ),
         ),
-        child: Stack(
-          children: [
-            // ----- ลูกบอลสีชมพูตกแต่งพื้นหลัง (blurred blobs) -----
-            _buildBlob(top: -60, left: -50, size: 160, opacity: 0.55),
-            _buildBlob(top: 40, right: -70, size: 130, opacity: 0.45),
-            _buildBlob(bottom: -70, left: -40, size: 180, opacity: 0.5),
-            _buildBlob(bottom: 60, right: -60, size: 140, opacity: 0.45),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildCard(),
 
-            // ----- เนื้อหาหลัก -----
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 24,
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    "KORYORSOS For PSU Students",
+                    style: TextStyle(
+                      color: Color(0xFFFF78C6),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildCard(),
-                      const SizedBox(height: 24),
-                      _buildSocialRow(),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBlob({
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required double size,
-    required double opacity,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [pinkBlob.withValues(alpha: opacity), pinkBlob.withValues(alpha: 0.0)],
           ),
         ),
       ),
@@ -210,13 +173,14 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 26),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white.withValues(alpha: .92),
+        borderRadius: BorderRadius.circular(35),
+        border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.pink.withValues(alpha: .18),
+            blurRadius: 35,
+            offset: Offset(0, 15),
           ),
         ],
       ),
@@ -229,48 +193,80 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20), // ความโค้งของมุม
-                child: Image.asset(
-                  'assets/images/logo3.jpg',
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.cover,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 25,
+                        color: Colors.pink.withValues(alpha: .25),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.asset(
+                      'assets/images/logo3.jpg',
+                      width: 180,
+                      height: 180,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              "Log in",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2D2A45),
+            const SizedBox(height: 18),
+
+            Center(
+              child: Column(
+                children: const [
+                  Text(
+                    "KORYORSOS",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFFF78C6),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+
+                  Text(
+                    "Welcome to KORYORSOS",
+                    style: TextStyle(fontSize: 14, color: Color(0xFF9A6BFF)),
+                  ),
+                ],
               ),
             ),
+
             const SizedBox(height: 24),
 
-            // ----- Email -----
-            _fieldLabel("Email"),
+            // ----- Username -----
+            _fieldLabel("Username"),
             const SizedBox(height: 6),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: _inputDecoration(hint: "you@example.com"),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return "กรุณากรอกอีเมล";
-                }
-                return null;
-              },
+              decoration: _inputDecoration(hint: "กรอกชื่อผู้ใช้").copyWith(
+                prefixIcon: const Icon(
+                  Icons.person_rounded,
+                  color: Color(0xFFFF78C6),
+                ),
+              ),
             ),
             const SizedBox(height: 18),
 
             // ----- Password -----
-            _fieldLabel("Password"),
+            _fieldLabel("รหัสผ่าน"),
             const SizedBox(height: 6),
+
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              decoration: _inputDecoration(hint: "••••••••").copyWith(
+              decoration: _inputDecoration(hint: "กรอกรหัสผ่าน").copyWith(
+                prefixIcon: const Icon(
+                  Icons.lock_rounded,
+                  color: Color(0xFFFF78C6),
+                ),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
@@ -280,7 +276,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     size: 20,
                   ),
                   onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
                   },
                 ),
               ),
@@ -291,95 +289,146 @@ class _LoginScreenState extends State<LoginScreen> {
                 return null;
               },
             ),
+
             const SizedBox(height: 8),
 
             // ----- Remember me / Forgot password -----
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Checkbox(
-                        value: _rememberMe,
-                        activeColor: primaryPurple,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    setState(() {
+                      _rememberMe = !_rememberMe;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: _rememberMe
+                              ? const Color(0xFFFF8FD8)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFFF8FD8),
+                            width: 1.8,
+                          ),
                         ),
-                        onChanged: (v) =>
-                            setState(() => _rememberMe = v ?? false),
+                        child: _rememberMe
+                            ? const Icon(
+                                Icons.favorite,
+                                color: Colors.white,
+                                size: 14,
+                              )
+                            : null,
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      "Remember me",
-                      style: TextStyle(fontSize: 12.5, color: Colors.black54),
-                    ),
-                  ],
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      const SizedBox(width: 8),
+                      const Text(
+                        "จดจำการเข้าสู่ระบบ",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B6283),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+
+                TextButton(
                   onPressed: () {},
+
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+
                   child: const Text(
-                    "Forgot password?",
-                    style: TextStyle(fontSize: 12.5, color: primaryPurple),
+                    "ลืมรหัสผ่าน?",
+                    style: TextStyle(
+                      color: Color(0xFFFF78C6),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 22),
 
             // ----- ปุ่ม SIGN IN -----
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('กำลังเข้าสู่ระบบ...')),
-                    );
-                    _doLogin(context);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryPurple,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              height: 56,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF8FD8), Color(0xFFC98CFF)],
                   ),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.pink.withValues(alpha: 0.35),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  "LOG IN",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("กำลังเข้าสู่ระบบ... 💖")),
+                      );
+                      _doLogin(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.favorite, color: Colors.white, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        "LOGIN",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+
             const SizedBox(height: 18),
 
             // ----- Not registered? Sign up -----
             Center(
               child: RichText(
                 text: TextSpan(
-                  style: const TextStyle(fontSize: 12.5, color: Colors.black54),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF8D85A5),
+                  ),
                   children: [
-                    const TextSpan(text: "Not registered yet? "),
+                    const TextSpan(text: "ยังไม่มีบัญชีผู้ใช้งาน? "),
                     TextSpan(
-                      text: "Sign up",
+                      text: "ลงทะเบียน 💖",
                       style: const TextStyle(
-                        color: primaryPurple,
+                        color: Color(0xFFFF78C6),
                         fontWeight: FontWeight.bold,
                       ),
                       recognizer: _signUpRecognizer,
@@ -395,12 +444,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _fieldLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 12.5,
-        color: Colors.black54,
-        fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF6B6283),
+        ),
       ),
     );
   }
@@ -408,83 +460,36 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _inputDecoration({required String hint}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.black26, fontSize: 14),
+      hintStyle: const TextStyle(color: Color(0xFFB4A7C8), fontSize: 14),
+
       filled: true,
-      fillColor: lightPurple.withValues(alpha: 0.08),
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      fillColor: Colors.white,
+
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide.none,
       ),
+
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.pinkAccent.shade100, width: 1.2),
       ),
+
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: primaryPurple, width: 1.4),
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFFF78C6), width: 2),
       ),
+
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
-    );
-  }
 
-  Widget _buildSocialRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _socialButton(
-          icon: Icons.facebook,
-          color: const Color(0xFF3B5998),
-          onTap: () {},
-        ),
-        const SizedBox(width: 16),
-        _socialButton(
-          icon: null,
-          letter: "G",
-          color: const Color(0xFFDB4437),
-          onTap: () {},
-        ),
-      ],
-    );
-  }
-
-  Widget _socialButton({
-    IconData? icon,
-    String? letter,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onTap,
-      child: Container(
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: icon != null
-            ? Icon(icon, color: color, size: 22)
-            : Text(
-                letter ?? "",
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
       ),
     );
   }
