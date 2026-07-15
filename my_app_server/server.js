@@ -55,7 +55,9 @@ app.post("/api/authen/authen_request", async (req, res) => {
     if (result.isError) {
         response = { isError: true, data: "", errorMessage: result.errorMessage };
     } else {
-        const payload = { username: result.data[0].username };
+        const payload = {
+            email: result.data[0].email
+        };
         const authenToken = jwt.sign(payload);
         response = {
             isError: false,
@@ -83,7 +85,7 @@ app.post("/api/authen/access_request", async (req, res) => {
         } else {
             var payload = {
                 user_id: result.data[0].user_id,
-                username: result.data[0].username,
+                email: result.data[0].email,
                 role_id: result.data[0].role_id,
                 date: dateUtil.getCurrentDateForToken()
             };
@@ -92,8 +94,7 @@ app.post("/api/authen/access_request", async (req, res) => {
             response = {
                 isError: false,
                 data: {
-                    access_token: accessToken,
-                    image_url: result.data[0].account_image_url
+                    access_token: accessToken
                 },
                 errorMessage: ""
             }

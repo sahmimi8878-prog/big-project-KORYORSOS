@@ -9,7 +9,19 @@ module.exports = {
     try {
       conn = await pool.getConnection();
 
-      const sql = `SELECT user_id, username, firstname, lastname, role_id FROM users WHERE user_id = ?`;
+      const sql = `
+      SELECT
+        u.user_id,
+        u.email,
+        u.role_id,
+        sp.student_code,
+        sp.prefix,
+        sp.first_name,
+        sp.last_name
+      FROM users u
+      JOIN student_profiles sp
+        ON u.user_id = sp.user_id
+      WHERE u.user_id = ?`;
 
       const rows = await conn.query(sql, [userId]);
 
@@ -23,8 +35,7 @@ module.exports = {
         errorMessage: error.message
       };
     } finally {
-      if (conn)
-        conn.release();
+      if (conn) conn.release();
     }
 
     return result;
@@ -37,10 +48,7 @@ module.exports = {
     try {
       conn = await pool.getConnection();
 
-      const sql = `
-        SELECT username
-        FROM users
-        WHERE SHA2(CONCAT(username, '&', ?), 256) = ?`;
+      const sql = `SELECT email FROM users WHERE SHA2(CONCAT(email,'&',?),256)=?`;
 
       const rows = await conn.query(sql, [
         dateUtil.getCurrentDateForToken(),
@@ -77,9 +85,26 @@ module.exports = {
     try {
       conn = await pool.getConnection();
 
-      const sql = `
-        SELECT user_id, username, firstname, lastname, role_id FROM users
-        WHERE SHA2(CONCAT(username, '&', password, '&', ?), 256) = ?`;
+const sql = `
+SELECT
+    u.user_id,
+    u.email,
+    u.role_id,
+    sp.student_code,
+    sp.first_name,
+    sp.last_name
+FROM users u
+JOIN student_profiles sp
+    ON u.user_id = sp.user_id
+WHERE SHA2(
+    CONCAT(
+        u.email,
+        '&',
+        u.password_hash,
+        '&',
+        ?
+    ),
+256)=?`;
 
       const rows = await conn.query(sql, [
         authenToken,
