@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_app/utils/data_utils.dart';
-
+import 'package:my_app/screen/home_screen.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -116,17 +116,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
     var result = await _accessRequest(authenToken);
 
-    if (!result.isError) {
-      print(result.data);
-    } else {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(content: Text(result.errorMessage)),
-      );
-    }
+          if (!result.isError) {
+        //เปลี่ยนหน้าไปที่ HomeScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen(),)
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(content: Text(result.errorMessage));
+          },
+        );
+      }
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
