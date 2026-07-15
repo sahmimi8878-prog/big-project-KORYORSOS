@@ -241,12 +241,12 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 24),
 
             // ----- Username -----
-            _fieldLabel("Username"),
+            _fieldLabel("Email"),
             const SizedBox(height: 6),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: _inputDecoration(hint: "กรอกชื่อผู้ใช้").copyWith(
+              decoration: _inputDecoration(hint: "กรอกอีเมล").copyWith(
                 prefixIcon: const Icon(
                   Icons.person_rounded,
                   color: Color(0xFFFF78C6),
