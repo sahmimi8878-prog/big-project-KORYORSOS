@@ -63,6 +63,10 @@ flutter:
 
   assets:                        
     - assets/images/logo3.jpg
+    - assets/images/Kame.jpg
+    - assets/images/Pu.jpg
+    - assets/images/Mee.jpg
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
