@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/menu_card__widget.dart';
+import '../widgets/navbar.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -9,16 +10,14 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       extendBody: true,
 
+      bottomNavigationBar: CustomNavBar(currentIndex: 0, onTap: (index) {}),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xfff8d7f3),
-              Color(0xffeef2ff),
-              Colors.white,
-            ],
+            colors: [Color(0xfff8d7f3), Color(0xffeef2ff), Colors.white],
           ),
         ),
 
@@ -28,11 +27,9 @@ class HomeScreen extends StatelessWidget {
 
             child: Column(
               children: [
-
                 /// Header
                 Row(
                   children: [
-
                     ClipRRect(
                       borderRadius: BorderRadius.circular(15),
                       child: Image.asset(
@@ -53,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
 
