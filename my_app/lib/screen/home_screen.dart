@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/menu_card__widget.dart';
 import '../widgets/navbar.dart';
+import 'booking_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -147,6 +148,14 @@ class HomeScreen extends StatelessWidget {
                     image: "assets/images/Kame.jpg",
                     color: const Color(0xffeba6d0),
                     imageLeft: true,
+                    onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BookingScreen(),
+      ),
+    );
+  },
                   ),
                 ],
               ),
