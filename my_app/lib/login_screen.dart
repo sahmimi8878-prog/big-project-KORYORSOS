@@ -7,6 +7,8 @@ import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_app/utils/data_utils.dart';
 import 'package:my_app/screen/home_screen.dart';
+import 'package:my_app/screen/register_screen.dart'; // <-- เพิ่มบรรทัดนี้
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -28,7 +30,11 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _signUpRecognizer = TapGestureRecognizer()
       ..onTap = () {
-        // TODO: ไปยังหน้า Sign up
+        // ไปยังหน้า Register
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+        );
       };
   }
 

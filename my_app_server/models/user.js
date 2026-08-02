@@ -133,4 +133,70 @@ WHERE SHA2(
 
     return result;
   },
+  createUser: async (userData) => {
+    let conn;
+    let result;
+
+    try {
+      conn = await pool.getConnection();
+      await conn.beginTransaction();
+
+      const insertUserSql = `
+        INSERT INTO users (email, password_hash, role_id, is_active, created_at, updated_at)
+        VALUES (?, SHA2(?, 256), ?, 1, NOW(), NOW())
+      `;
+      const userResult = await conn.query(insertUserSql, [
+        userData.email,
+        userData.password,
+        userData.role_id || 3
+      ]);
+
+      const newUserId = Number(userResult.insertId);
+
+      // เพิ่มข้อมูลลงตาราง student_profiles
+      const insertProfileSql = `
+        INSERT INTO student_profiles
+          (user_id, student_code, citizen_id, prefix, first_name, last_name, birth_date, phone, faculty, major, year, GPA)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      await conn.query(insertProfileSql, [
+        newUserId,
+        userData.student_code,
+        userData.citizen_id,
+        userData.prefix || null,
+        userData.first_name,
+        userData.last_name,
+        userData.birth_date,
+        userData.phone,
+        userData.faculty,
+        userData.major,
+        userData.year,
+        userData.gpa
+      ]);
+
+      await conn.commit();
+
+      result = {
+        isError: false,
+        data: { user_id: newUserId }
+      };
+    } catch (error) {
+      if (conn) await conn.rollback();
+
+      // email / student_code / citizen_id ซ้ำ (ต้องตั้ง UNIQUE ที่ column เหล่านี้ในฐานข้อมูลตาม ERD)
+      let errorMessage = error.message;
+      if (error.code === 'ER_DUP_ENTRY') {
+        errorMessage = 'อีเมล / รหัสนักศึกษา / เลขบัตรประชาชนนี้ถูกใช้งานแล้ว';
+      }
+
+      result = {
+        isError: true,
+        errorMessage
+      };
+    } finally {
+      if (conn) conn.release();
+    }
+
+    return result;
+  },
 };

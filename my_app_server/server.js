@@ -116,6 +116,11 @@ app.get("/api/profile", checkAccessToken, async (req, res) => {
     res.json(result);
 });
 
+app.post('/api/register', async (req, res) => {
+    const result = await userModel.createUser(req.body);
+    res.json(result);
+});
+
 app.listen(port, host, () => {
     console.log(`Server running at http://${host}:${port}/`);
 });
