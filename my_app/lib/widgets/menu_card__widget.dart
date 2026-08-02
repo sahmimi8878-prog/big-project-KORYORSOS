@@ -6,6 +6,7 @@ class MenuCard extends StatelessWidget {
   final String image;
   final Color color;
   final bool imageLeft;
+  final VoidCallback? onTap; // เพิ่มตรงนี้
 
   const MenuCard({
     super.key,
@@ -13,45 +14,38 @@ class MenuCard extends StatelessWidget {
     required this.image,
     required this.color,
     required this.imageLeft,
+    this.onTap, // เพิ่มตรงนี้
   });
 
   @override
   Widget build(BuildContext context) {
+    
 
-    return Container(
-
-      height: 110,
-
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(25),
-      ),
-
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-
-        child: Row(
-
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-          children: [
-
-            if(imageLeft)
-              Image.asset(image,height:80),
-
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff5a4037),
+    return GestureDetector(
+      onTap: onTap, // <-- เพิ่มบรรทัดนี้
+      child: Container(
+        height: 110,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (imageLeft) Image.asset(image, height: 80),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xff5a4037),
+                ),
               ),
-            ),
-
-            if(!imageLeft)
-              Image.asset(image,height:80),
-
-          ],
+              if (!imageLeft) Image.asset(image, height: 80),
+            ],
+          ),
         ),
       ),
     );
