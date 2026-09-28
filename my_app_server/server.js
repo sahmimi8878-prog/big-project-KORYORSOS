@@ -16,6 +16,7 @@ app.use(cors());
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
 
+
 const host = '127.0.0.1';
 const port = 3000;
 
@@ -65,10 +66,27 @@ const checkAccessToken = (req, res, next) => {
         });
 }
 
+// แสดงข้อมูลผู้ใช้ทั้งหมด
+app.get('/api/users', async (req, res) => {
+    const result = await userModel.getUsers();
+    res.json(result);
+});
+
 app.get('/api/users/:userId', async (req, res) => {
     var userId = req.params.userId;
     var result = await userModel.getUserById(userId);
     res.send(JSON.stringify(result));
+});
+
+app.put('/api/users/:userId', async (req, res) => {
+    const userId = req.params.userId;
+
+    const result = await userModel.updateUser(
+        userId,
+        req.body
+    );
+
+    res.json(result);
 });
 
 app.post("/api/authen/authen_request", async (req, res) => {
@@ -121,7 +139,8 @@ app.post("/api/authen/access_request", async (req, res) => {
             response = {
                 isError: false,
                 data: {
-                    access_token: accessToken
+                    access_token: accessToken,
+                    role_id: result.data[0].role_id
                 },
                 errorMessage: ""
             }
