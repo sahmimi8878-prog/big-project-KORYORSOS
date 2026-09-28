@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/menu_card__widget.dart';
 import '../widgets/navbar.dart';
+import 'package:my_app/screen/document/document_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -110,6 +111,14 @@ class HomeScreen extends StatelessWidget {
                     image: "assets/images/Mee.jpg",
                     color: const Color(0xfffaefef),
                     imageLeft: false,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DocumentListScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 22),
