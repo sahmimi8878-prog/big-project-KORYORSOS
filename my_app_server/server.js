@@ -12,7 +12,9 @@ const documentModel = require('./models/document');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: true
+}));
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
 
