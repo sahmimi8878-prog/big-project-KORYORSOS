@@ -2,14 +2,9 @@ const http = require('http');
 const bp = require('body-parser');
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const userModel = require('./models/user');
 const jwt = require('./libs/jwt');
 const dateUtil = require('./libs/date_utils');
-const documentModel = require('./models/document');
-
 const app = express();
 
 app.use(cors({
@@ -17,7 +12,6 @@ app.use(cors({
 }));
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
-
 
 const host = '127.0.0.1';
 const port = 3000;
@@ -38,99 +32,157 @@ const upload = multer({ storage });
 // ให้เข้าถึงไฟล์ที่อัปโหลดผ่าน URL เช่น http://127.0.0.1:3000/uploads/xxxx.pdf
 app.use('/uploads', express.static(uploadDir));
 
+// ======================================================
+// ตรวจสอบ Access Token
+// ======================================================
 const checkAccessToken = (req, res, next) => {
     let token = null;
 
-    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+    // Authorization: Bearer token
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.split(' ')[0] === 'Bearer'
+    ) {
         token = req.headers.authorization.split(' ')[1];
-    } else if (req.query && req.query.token) {
+    }
+
+    // ?token=...
+    else if (req.query && req.query.token) {
         token = req.query.token;
-    } else if (req.body && req.body.token) {
+    }
+
+    // body token
+    else if (req.body && req.body.token) {
         token = req.body.token;
     }
 
+    // ไม่มี token
     if (!token) {
-        return res.json({
+        return res.status(401).json({
             isError: true,
             errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
         });
     }
 
+    // ตรวจสอบ token
     jwt.verify(token)
         .then(decoded => {
             req.decoded = decoded;
             next();
-        }, (err) => {
-            res.json({
+        })
+        .catch(err => {
+            return res.status(401).json({
                 isError: true,
-                errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
+                errorMessage: 'Session หมดอายุหรือ Token ไม่ถูกต้อง',
             });
         });
-}
+};
 
-// แสดงข้อมูลผู้ใช้ทั้งหมด
-app.get('/api/users', async (req, res) => {
-    const result = await userModel.getUsers();
-    res.json(result);
-});
 
-app.get('/api/users/:userId', async (req, res) => {
-    var userId = req.params.userId;
-    var result = await userModel.getUserById(userId);
-    res.send(JSON.stringify(result));
-});
+// ======================================================
+// ตรวจสอบว่าเป็นเจ้าหน้าที่
+// role_id = 2
+// ======================================================
+const checkOfficer = (req, res, next) => {
 
-app.put('/api/users/:userId', async (req, res) => {
-    const userId = req.params.userId;
+    if (!req.decoded) {
+        return res.status(401).json({
+            isError: true,
+            errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
+        });
+    }
 
-    const result = await userModel.updateUser(
-        userId,
-        req.body
-    );
+    if (req.decoded.role_id !== 2) {
+        return res.status(403).json({
+            isError: true,
+            errorMessage: 'ไม่มีสิทธิ์ดำเนินการนี้ เฉพาะเจ้าหน้าที่เท่านั้น',
+        });
+    }
 
-    res.json(result);
-});
+    next();
+};
 
-app.post("/api/authen/authen_request", async (req, res) => {
+
+// ======================================================
+// LOGIN
+// ======================================================
+
+// Login ขั้นที่ 1
+app.post('/api/authen/authen_request', async (req, res) => {
+
     console.log(req.body.authen_request);
+
     const authenRequest = req.body.authen_request;
+
     const result = await userModel.checkAuthenRequest(authenRequest);
+
     console.log(result);
 
     let response;
 
     if (result.isError) {
-        response = { isError: true, data: "", errorMessage: result.errorMessage };
+
+        response = {
+            isError: true,
+            data: '',
+            errorMessage: result.errorMessage
+        };
+
     } else {
+
         const payload = {
             email: result.data[0].email
         };
+
         const authenToken = jwt.sign(payload);
+
         response = {
             isError: false,
             data: authenToken,
-            errorMessage: ""
+            errorMessage: ''
         };
     }
-    res.send(JSON.stringify(response));
+
+    res.json(response);
 });
 
-app.post("/api/authen/access_request", async (req, res) => {
+
+// Login ขั้นที่ 2
+app.post('/api/authen/access_request', async (req, res) => {
+
     const authenSignature = req.body.authen_signature;
     const authenToken = req.body.authen_token;
 
-    var decoded = jwt.verify(authenToken);
+    let decoded;
+
+    try {
+        decoded = await jwt.verify(authenToken);
+    } catch (error) {
+        decoded = null;
+    }
 
     let response;
 
     if (decoded) {
-        const result = await userModel.checkAccessRequest(authenSignature, authenToken);
+
+        const result = await userModel.checkAccessRequest(
+            authenSignature,
+            authenToken
+        );
+
         console.log(result);
 
         if (result.isError) {
-            response = { isError: true, data: "", errorMessage: result.errorMessage };
+
+            response = {
+                isError: true,
+                data: '',
+                errorMessage: result.errorMessage
+            };
+
         } else {
-            var payload = {
+
+            const payload = {
                 user_id: result.data[0].user_id,
                 email: result.data[0].email,
                 role_id: result.data[0].role_id,
@@ -138,83 +190,67 @@ app.post("/api/authen/access_request", async (req, res) => {
             };
 
             const accessToken = jwt.sign(payload);
+
             response = {
                 isError: false,
                 data: {
                     access_token: accessToken,
                     role_id: result.data[0].role_id
                 },
-                errorMessage: ""
-            }
+                errorMessage: ''
+            };
         }
+
     } else {
+
         response = {
             isError: true,
-            data: "",
-            errorMessage: "ข้อมูลไม่ถูกต้อง"
+            data: '',
+            errorMessage: 'ข้อมูลไม่ถูกต้อง'
         };
     }
 
-    res.send(JSON.stringify(response));
+    res.json(response);
 });
 
-app.get("/api/profile", checkAccessToken, async (req, res) => {
+
+// ======================================================
+// PROFILE
+// ผู้ใช้ทุก Role ดูข้อมูลตัวเองได้
+// ======================================================
+
+app.get('/api/profile', checkAccessToken, async (req, res) => {
+
     console.log(req.decoded);
-    const result = await userModel.getUserById(req.decoded.user_id);
-    res.json(result);
-});
 
-// ---- Documents CRUD ----
+    const result = await userModel.getUserById(
+        req.decoded.user_id
+    );
 
-app.get("/api/documents", checkAccessToken, async (req, res) => {
-    const result = await documentModel.getDocumentsByUserId(req.decoded.user_id);
-    res.json(result);
-});
-
-// หมายเหตุ: ฝั่ง Flutter ยิงเป็น POST ทั้งตอนเพิ่มและแก้ไข (ไม่ใช่ PUT จริง)
-// เพราะ MultipartRequest ถูกสร้างด้วย method 'POST' ตรงๆ ในทั้งสองฟังก์ชัน
-app.post("/api/documents", checkAccessToken, upload.single('file'), async (req, res) => {
-    const { doc_type, doc_name, note } = req.body;
-    const filePath = req.file ? `/uploads/${req.file.filename}` : null;
-
-    const result = await documentModel.addDocument({
-        userId: req.decoded.user_id,
-        docType: doc_type,
-        docName: doc_name,
-        filePath,
-        note: note || null
-    });
-    res.json(result);
-});
-
-app.post("/api/documents/:id", checkAccessToken, upload.single('file'), async (req, res) => {
-    const { doc_type, doc_name, note } = req.body;
-    const filePath = req.file ? `/uploads/${req.file.filename}` : null;
-
-    const result = await documentModel.updateDocument({
-        documentId: req.params.id,
-        userId: req.decoded.user_id,
-        docType: doc_type,
-        docName: doc_name,
-        filePath,
-        note: note || null
-    });
-    res.json(result);
-});
-
-app.delete("/api/documents/:id", checkAccessToken, async (req, res) => {
-    const result = await documentModel.deleteDocument({
-        documentId: req.params.id,
-        userId: req.decoded.user_id
-    });
     res.json(result);
 });
 
 app.post('/api/register', async (req, res) => {
-    const result = await userModel.createUser(req.body);
+
+    const userData = {
+        ...req.body,
+
+        // สมัครสมาชิกทั่วไป = นักศึกษาเท่านั้น
+        role_id: 1
+    };
+
+    const result = await userModel.createUser(userData);
+
     res.json(result);
 });
 
+
+// ======================================================
+// START SERVER
+// ======================================================
+
 app.listen(port, host, () => {
-    console.log(`Server running at http://${host}:${port}/`);
+    console.log(
+        `Server running at http://${host}:${port}/`
+    );
 });
