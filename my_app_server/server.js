@@ -2,21 +2,36 @@ const http = require('http');
 const bp = require('body-parser');
 const express = require('express');
 const cors = require('cors');
-
 const userModel = require('./models/user');
 const bookings = require('./models/bookings');
 const jwt = require('./libs/jwt');
 const dateUtil = require('./libs/date_utils');
-
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: true
+}));
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
 
 const host = '127.0.0.1';
 const port = 3000;
 
+// ---- ตั้งค่าที่เก็บไฟล์อัปโหลด ----
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage });
+
+// ให้เข้าถึงไฟล์ที่อัปโหลดผ่าน URL เช่น http://127.0.0.1:3000/uploads/xxxx.pdf
+app.use('/uploads', express.static(uploadDir));
 
 // ======================================================
 // ตรวจสอบ Access Token
@@ -215,100 +230,6 @@ app.get('/api/profile', checkAccessToken, async (req, res) => {
 
     res.json(result);
 });
-
-
-// ======================================================
-// USER MANAGEMENT
-// เฉพาะเจ้าหน้าที่เท่านั้น
-// ======================================================
-
-
-// แสดงข้อมูลผู้ใช้ทั้งหมด
-app.get(
-    '/api/users',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-
-        const result = await userModel.getUsers();
-
-        res.json(result);
-    }
-);
-
-
-// แสดงข้อมูลผู้ใช้ตาม user_id
-app.get(
-    '/api/users/:userId',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-
-        const userId = req.params.userId;
-
-        const result = await userModel.getUserById(userId);
-
-        res.json(result);
-    }
-);
-
-
-// เพิ่มผู้ใช้
-// เฉพาะเจ้าหน้าที่
-app.post(
-    '/api/users',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-
-        const result = await userModel.createUser(req.body);
-
-        res.json(result);
-    }
-);
-
-
-// แก้ไขข้อมูลผู้ใช้
-app.put(
-    '/api/users/:userId',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-
-        const userId = req.params.userId;
-
-        const result = await userModel.updateUser(
-            userId,
-            req.body
-        );
-
-        res.json(result);
-    }
-);
-
-
-// ลบข้อมูลผู้ใช้
-// ตอนนี้ใส่ไว้ให้พร้อมสำหรับขั้นตอนถัดไป
-app.delete(
-    '/api/users/:userId',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-
-        const userId = req.params.userId;
-
-        const result = await userModel.deleteUser(userId);
-
-        res.json(result);
-    }
-);
-
-
-// ======================================================
-// REGISTER
-// สำหรับสมัครสมาชิกทั่วไป
-// กำหนดให้เป็นนักศึกษา role_id = 1 เท่านั้น
-// ======================================================
 
 app.post('/api/register', async (req, res) => {
 
