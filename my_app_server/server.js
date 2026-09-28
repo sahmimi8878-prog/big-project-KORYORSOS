@@ -2,114 +2,173 @@ const http = require('http');
 const bp = require('body-parser');
 const express = require('express');
 const cors = require('cors');
+
 const userModel = require('./models/user');
 const bookings = require('./models/bookings');
 const jwt = require('./libs/jwt');
 const dateUtil = require('./libs/date_utils');
+
 const app = express();
 
 app.use(cors());
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
 
-
 const host = '127.0.0.1';
 const port = 3000;
 
 
+// ======================================================
+// ตรวจสอบ Access Token
+// ======================================================
 const checkAccessToken = (req, res, next) => {
     let token = null;
 
-    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+    // Authorization: Bearer token
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.split(' ')[0] === 'Bearer'
+    ) {
         token = req.headers.authorization.split(' ')[1];
-    } else if (req.query && req.query.token) {
+    }
+
+    // ?token=...
+    else if (req.query && req.query.token) {
         token = req.query.token;
-    } else if (req.body && req.body.token) {
+    }
+
+    // body token
+    else if (req.body && req.body.token) {
         token = req.body.token;
     }
 
+    // ไม่มี token
     if (!token) {
-        return res.json({
+        return res.status(401).json({
             isError: true,
             errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
         });
     }
 
+    // ตรวจสอบ token
     jwt.verify(token)
         .then(decoded => {
             req.decoded = decoded;
             next();
-        }, (err) => {
-            res.json({
+        })
+        .catch(err => {
+            return res.status(401).json({
                 isError: true,
-                errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
+                errorMessage: 'Session หมดอายุหรือ Token ไม่ถูกต้อง',
             });
         });
-}
+};
 
-// แสดงข้อมูลผู้ใช้ทั้งหมด
-app.get('/api/users', async (req, res) => {
-    const result = await userModel.getUsers();
-    res.json(result);
-});
 
-app.get('/api/users/:userId', async (req, res) => {
-    var userId = req.params.userId;
-    var result = await userModel.getUserById(userId);
-    res.send(JSON.stringify(result));
-});
+// ======================================================
+// ตรวจสอบว่าเป็นเจ้าหน้าที่
+// role_id = 2
+// ======================================================
+const checkOfficer = (req, res, next) => {
 
-app.put('/api/users/:userId', async (req, res) => {
-    const userId = req.params.userId;
+    if (!req.decoded) {
+        return res.status(401).json({
+            isError: true,
+            errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
+        });
+    }
 
-    const result = await userModel.updateUser(
-        userId,
-        req.body
-    );
+    if (req.decoded.role_id !== 2) {
+        return res.status(403).json({
+            isError: true,
+            errorMessage: 'ไม่มีสิทธิ์ดำเนินการนี้ เฉพาะเจ้าหน้าที่เท่านั้น',
+        });
+    }
 
-    res.json(result);
-});
+    next();
+};
 
-app.post("/api/authen/authen_request", async (req, res) => {
+
+// ======================================================
+// LOGIN
+// ======================================================
+
+// Login ขั้นที่ 1
+app.post('/api/authen/authen_request', async (req, res) => {
+
     console.log(req.body.authen_request);
+
     const authenRequest = req.body.authen_request;
+
     const result = await userModel.checkAuthenRequest(authenRequest);
+
     console.log(result);
 
     let response;
 
     if (result.isError) {
-        response = { isError: true, data: "", errorMessage: result.errorMessage };
+
+        response = {
+            isError: true,
+            data: '',
+            errorMessage: result.errorMessage
+        };
+
     } else {
+
         const payload = {
             email: result.data[0].email
         };
+
         const authenToken = jwt.sign(payload);
+
         response = {
             isError: false,
             data: authenToken,
-            errorMessage: ""
+            errorMessage: ''
         };
     }
-    res.send(JSON.stringify(response));
+
+    res.json(response);
 });
 
-app.post("/api/authen/access_request", async (req, res) => {
+
+// Login ขั้นที่ 2
+app.post('/api/authen/access_request', async (req, res) => {
+
     const authenSignature = req.body.authen_signature;
     const authenToken = req.body.authen_token;
 
-    var decoded = jwt.verify(authenToken);
+    let decoded;
+
+    try {
+        decoded = await jwt.verify(authenToken);
+    } catch (error) {
+        decoded = null;
+    }
 
     let response;
 
     if (decoded) {
-        const result = await userModel.checkAccessRequest(authenSignature, authenToken);
+
+        const result = await userModel.checkAccessRequest(
+            authenSignature,
+            authenToken
+        );
+
         console.log(result);
 
         if (result.isError) {
-            response = { isError: true, data: "", errorMessage: result.errorMessage };
+
+            response = {
+                isError: true,
+                data: '',
+                errorMessage: result.errorMessage
+            };
+
         } else {
-            var payload = {
+
+            const payload = {
                 user_id: result.data[0].user_id,
                 email: result.data[0].email,
                 role_id: result.data[0].role_id,
@@ -117,85 +176,156 @@ app.post("/api/authen/access_request", async (req, res) => {
             };
 
             const accessToken = jwt.sign(payload);
+
             response = {
                 isError: false,
                 data: {
                     access_token: accessToken,
                     role_id: result.data[0].role_id
                 },
-                errorMessage: ""
-            }
+                errorMessage: ''
+            };
         }
+
     } else {
+
         response = {
             isError: true,
-            data: "",
-            errorMessage: "ข้อมูลไม่ถูกต้อง"
+            data: '',
+            errorMessage: 'ข้อมูลไม่ถูกต้อง'
         };
     }
 
-    res.send(JSON.stringify(response));
+    res.json(response);
 });
 
-app.get("/api/profile", checkAccessToken, async (req, res) => {
+
+// ======================================================
+// PROFILE
+// ผู้ใช้ทุก Role ดูข้อมูลตัวเองได้
+// ======================================================
+
+app.get('/api/profile', checkAccessToken, async (req, res) => {
+
     console.log(req.decoded);
-    const result = await userModel.getUserById(req.decoded.user_id);
+
+    const result = await userModel.getUserById(
+        req.decoded.user_id
+    );
+
     res.json(result);
 });
+
+
+// ======================================================
+// USER MANAGEMENT
+// เฉพาะเจ้าหน้าที่เท่านั้น
+// ======================================================
+
+
+// แสดงข้อมูลผู้ใช้ทั้งหมด
+app.get(
+    '/api/users',
+    checkAccessToken,
+    checkOfficer,
+    async (req, res) => {
+
+        const result = await userModel.getUsers();
+
+        res.json(result);
+    }
+);
+
+
+// แสดงข้อมูลผู้ใช้ตาม user_id
+app.get(
+    '/api/users/:userId',
+    checkAccessToken,
+    checkOfficer,
+    async (req, res) => {
+
+        const userId = req.params.userId;
+
+        const result = await userModel.getUserById(userId);
+
+        res.json(result);
+    }
+);
+
+
+// เพิ่มผู้ใช้
+// เฉพาะเจ้าหน้าที่
+app.post(
+    '/api/users',
+    checkAccessToken,
+    checkOfficer,
+    async (req, res) => {
+
+        const result = await userModel.createUser(req.body);
+
+        res.json(result);
+    }
+);
+
+
+// แก้ไขข้อมูลผู้ใช้
+app.put(
+    '/api/users/:userId',
+    checkAccessToken,
+    checkOfficer,
+    async (req, res) => {
+
+        const userId = req.params.userId;
+
+        const result = await userModel.updateUser(
+            userId,
+            req.body
+        );
+
+        res.json(result);
+    }
+);
+
+
+// ลบข้อมูลผู้ใช้
+// ตอนนี้ใส่ไว้ให้พร้อมสำหรับขั้นตอนถัดไป
+app.delete(
+    '/api/users/:userId',
+    checkAccessToken,
+    checkOfficer,
+    async (req, res) => {
+
+        const userId = req.params.userId;
+
+        const result = await userModel.deleteUser(userId);
+
+        res.json(result);
+    }
+);
+
+
+// ======================================================
+// REGISTER
+// สำหรับสมัครสมาชิกทั่วไป
+// กำหนดให้เป็นนักศึกษา role_id = 1 เท่านั้น
+// ======================================================
 
 app.post('/api/register', async (req, res) => {
-    const result = await userModel.createUser(req.body);
+
+    const userData = {
+        ...req.body,
+
+        // สมัครสมาชิกทั่วไป = นักศึกษาเท่านั้น
+        role_id: 1
+    };
+
+    const result = await userModel.createUser(userData);
+
     res.json(result);
-});
-
-app.get("/api/bookings/list", checkAccessToken, async (req, res) => {
-    const response = await bookings.getBookings(req.decoded.user_id);
-    res.json(response);
-});
-
-app.get("/api/bookings/slots", checkAccessToken, async (req, res) => {
-    const bookingDate = req.query.date;
-
-    const response = await bookings.getSlotCounts(bookingDate);
-    res.json(response);
-});
-
-// ต้องอยู่หลัง /list และ /slots ไม่งั้น :bookingId จะรับคำว่า list / slots ไปแทน
-app.get("/api/bookings/:bookingId", checkAccessToken, async (req, res) => {
-    const bookingId = req.params.bookingId;
-
-    const response = await bookings.getBookingById(bookingId, req.decoded.user_id);
-    res.json(response);
-});
-
-app.post("/api/bookings/create", checkAccessToken, async (req, res) => {
-    const userId = req.decoded.user_id;
-    const serviceType = req.body.service_type;
-    const bookingDate = req.body.booking_date;
-    const timeSlot = req.body.time_slot;
-
-    const response = await bookings.createBooking(userId, serviceType, bookingDate, timeSlot);
-    res.json(response);
-});
-
-app.post("/api/bookings/update", checkAccessToken, async (req, res) => {
-    const userId = req.decoded.user_id;
-    const bookingId = req.body.booking_id;
-    const serviceType = req.body.service_type;
-    const bookingDate = req.body.booking_date;
-    const timeSlot = req.body.time_slot;
-
-    const response = await bookings.updateBooking(userId, bookingId, serviceType, bookingDate, timeSlot);
-    res.json(response);
-});
-
-app.post("/api/bookings/delete", checkAccessToken, async (req, res) => {
-    const bookingId = req.body.booking_id;
-
-    const response = await bookings.deleteBooking(bookingId, req.decoded.user_id);
-    res.json(response);
 });
 
 app.listen(port, host, () => {
-    console.log(`Server running at http://${host}:${port}/`);
+    console.log(
+        `Server running at http://${host}:${port}/`
+    );
 });
