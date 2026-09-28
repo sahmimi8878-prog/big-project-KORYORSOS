@@ -165,13 +165,8 @@ module.exports = {
         SELECT
           u.user_id,
           u.email,
-          u.role_id,
-          sp.student_code,
-          sp.first_name,
-          sp.last_name
+          u.role_id
         FROM users u
-        JOIN student_profiles sp
-          ON u.user_id = sp.user_id
         WHERE SHA2(
           CONCAT(
             u.email,
