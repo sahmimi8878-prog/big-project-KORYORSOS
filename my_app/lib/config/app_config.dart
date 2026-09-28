@@ -7,4 +7,7 @@ class AppConfig {
   static const String accessRequest = "$apiBaseUrl/authen/access_request";
   static const String profile = "$apiBaseUrl/profile";
   static const String register = "$apiBaseUrl/register";   // <-- เพิ่มบรรทัดนี้
+  
+  // Documents
+  static const String documents = "$apiBaseUrl/documents";
 }
