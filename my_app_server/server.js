@@ -3,6 +3,7 @@ const bp = require('body-parser');
 const express = require('express');
 const cors = require('cors');
 const userModel = require('./models/user');
+const bookings = require('./models/bookings');
 const jwt = require('./libs/jwt');
 const dateUtil = require('./libs/date_utils');
 const app = express();
@@ -126,6 +127,54 @@ app.get("/api/profile", checkAccessToken, async (req, res) => {
 app.post('/api/register', async (req, res) => {
     const result = await userModel.createUser(req.body);
     res.json(result);
+});
+
+app.get("/api/bookings/list", checkAccessToken, async (req, res) => {
+    const response = await bookings.getBookings(req.decoded.user_id);
+    res.json(response);
+});
+
+app.get("/api/bookings/slots", checkAccessToken, async (req, res) => {
+    const bookingDate = req.query.date;
+
+    const response = await bookings.getSlotCounts(bookingDate);
+    res.json(response);
+});
+
+// ต้องอยู่หลัง /list และ /slots ไม่งั้น :bookingId จะรับคำว่า list / slots ไปแทน
+app.get("/api/bookings/:bookingId", checkAccessToken, async (req, res) => {
+    const bookingId = req.params.bookingId;
+
+    const response = await bookings.getBookingById(bookingId, req.decoded.user_id);
+    res.json(response);
+});
+
+app.post("/api/bookings/create", checkAccessToken, async (req, res) => {
+    const userId = req.decoded.user_id;
+    const serviceType = req.body.service_type;
+    const bookingDate = req.body.booking_date;
+    const timeSlot = req.body.time_slot;
+
+    const response = await bookings.createBooking(userId, serviceType, bookingDate, timeSlot);
+    res.json(response);
+});
+
+app.post("/api/bookings/update", checkAccessToken, async (req, res) => {
+    const userId = req.decoded.user_id;
+    const bookingId = req.body.booking_id;
+    const serviceType = req.body.service_type;
+    const bookingDate = req.body.booking_date;
+    const timeSlot = req.body.time_slot;
+
+    const response = await bookings.updateBooking(userId, bookingId, serviceType, bookingDate, timeSlot);
+    res.json(response);
+});
+
+app.post("/api/bookings/delete", checkAccessToken, async (req, res) => {
+    const bookingId = req.body.booking_id;
+
+    const response = await bookings.deleteBooking(bookingId, req.decoded.user_id);
+    res.json(response);
 });
 
 app.listen(port, host, () => {

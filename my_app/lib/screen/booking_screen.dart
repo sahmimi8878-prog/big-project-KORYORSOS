@@ -76,11 +76,22 @@ class _BookingScreenState extends State<BookingScreen> {
     'ปรึกษาเจ้าหน้าที่',
   ];
 
-  // ช่วงเวลา 09:00 - 16:00 ช่วงละ 30 นาที พักเที่ยง 12:00 - 13:00
-  // จำนวนคิวคงเหลือยัง mock (ระบบจริงควรดึงจาก server ตาม _selectedDate)
-  final List<Map<String, dynamic>> _timeSlots = _buildTimeSlots();
+  // จำนวนคิวสูงสุดต่อ 1 ช่วงเวลา
+  static const int _slotCapacity = 5;
 
-  static List<Map<String, dynamic>> _buildTimeSlots() {
+  // การจองเดิม (โหมดแก้ไข) ใช้คืนคิวของตัวเองให้ว่างตอนคำนวณคิวคงเหลือ
+  DateTime? _originalDate;
+  String? _originalTime;
+
+  // ช่วงเวลา 09:00 - 16:00 ช่วงละ 30 นาที พักเที่ยง 12:00 - 13:00
+  // จำนวนคิวคงเหลือ = _slotCapacity - จำนวนที่จองแล้ว (ดึงจาก server ตาม _selectedDate)
+  List<Map<String, dynamic>> _timeSlots = _buildTimeSlots();
+
+  // booked: จำนวนที่จองแล้วต่อ time slot, ownSlot: slot ของการจองที่กำลังแก้ไข (ไม่นับเป็นคิวที่ถูกใช้)
+  static List<Map<String, dynamic>> _buildTimeSlots({
+    Map<String, int> booked = const {},
+    String? ownSlot,
+  }) {
     const int openMinute = 9 * 60;
     const int closeMinute = 16 * 60;
     const int breakStart = 12 * 60;
@@ -104,9 +115,13 @@ class _BookingScreenState extends State<BookingScreen> {
         continue;
       }
 
+      final String time = '${fmt(start)} - ${fmt(start + slotLength)}';
+      int used = booked[time] ?? 0;
+      if (time == ownSlot && used > 0) used--;
+
       slots.add({
-        'time': '${fmt(start)} - ${fmt(start + slotLength)}',
-        'remaining': 5,
+        'time': time,
+        'remaining': (_slotCapacity - used).clamp(0, _slotCapacity),
       });
     }
 
@@ -118,7 +133,41 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
-    _initData();
+    // โหลดข้อมูลเดิมก่อน (โหมดแก้ไข) แล้วค่อยนับคิว เพื่อให้รู้ว่า slot ไหนเป็นของการจองนี้
+    _initData().then((_) => _fetchSlotCounts());
+  }
+
+  // ---------- ดึงจำนวนที่จองแล้วต่อ time slot ของวันที่เลือก ----------
+  Future<void> _fetchSlotCounts() async {
+    final DateTime date = _selectedDate;
+    final Map<String, int> booked = {};
+
+    try {
+      final dateText = DateFormat('dd-MM-yyyy').format(date);
+      var response = await AppAPI.get("/bookings/slots?date=$dateText");
+      Map<String, dynamic> json = jsonDecode(response.body);
+
+      if (!((json["isError"] ?? true) as bool) && json["data"] is List) {
+        for (final row in json["data"]) {
+          booked[row["time_slot"] as String] = (row["booked"] as num).toInt();
+        }
+      }
+    } catch (e) {
+      // ดึงไม่ได้ให้แสดงคิวเต็มจำนวนไปก่อน (server จะเช็กซ้ำตอนจองจริง)
+    }
+
+    // ผู้ใช้อาจเปลี่ยนวันที่ระหว่างรอ response
+    if (!mounted || date != _selectedDate) return;
+
+    final bool isOwnDate = _originalDate != null &&
+        DateUtils.isSameDay(_originalDate, date);
+
+    setState(() {
+      _timeSlots = _buildTimeSlots(
+        booked: booked,
+        ownSlot: isOwnDate ? _originalTime : null,
+      );
+    });
   }
 
   // ---------- ดึงข้อมูลการจองเดิม (โหมดแก้ไข) ----------
@@ -155,6 +204,8 @@ class _BookingScreenState extends State<BookingScreen> {
             : _serviceTypes.first;
         _selectedDate = model.getBookingDate();
         _selectedTime = model.timeSlot;
+        _originalDate = _selectedDate;
+        _originalTime = model.timeSlot;
         _isLoading = false;
       });
     } catch (e) {
@@ -429,6 +480,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                     _selectedDate = newDate; // รับค่าจาก callback ของ widget ลูก
                                     _selectedTime = null; // เปลี่ยนวันที่แล้วให้เลือกเวลาใหม่
                                   });
+                                  _fetchSlotCounts(); // นับคิวคงเหลือของวันที่ใหม่
                                 },
                                 onTimeChanged: (newTime) {
                                   setState(() {
