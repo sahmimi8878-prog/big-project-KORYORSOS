@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/menu_card__widget.dart';
-import '../widgets/navbar.dart';
-import 'booking_list_screen.dart';
+import '../../widgets/menu_card__widget.dart';
+import '../../widgets/navbar.dart';
+import '../officer/user/user_screen.dart';
+import '../booking_list_screen.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -102,6 +104,14 @@ class HomeScreen extends StatelessWidget {
                     image: "assets/images/Pu.jpg",
                     color: const Color(0xffc7c6ea),
                     imageLeft: true,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 22),

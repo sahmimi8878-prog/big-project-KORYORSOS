@@ -6,8 +6,9 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_app/utils/data_utils.dart';
-import 'package:my_app/screen/home_screen.dart';
-import 'package:my_app/screen/register_screen.dart';
+import 'package:my_app/screen/student/home_screen.dart';
+import 'package:my_app/screen/auth/register_screen.dart';
+import 'package:my_app/screen/officer/officer_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,9 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<({bool isError, String data, String errorMessage})> _accessRequest(
-    String authenToken,
-  ) async {
+  Future<({String data, String errorMessage, bool isError, int roleId})>
+  _accessRequest(String authenToken) async {
     String username = _emailController.text;
     String password = _passwordController.text;
 
@@ -100,11 +100,16 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString("access_token", json["data"]["access_token"]);
 
       await prefs.setString("username", username);
+
+      await prefs.setInt("role_id", json["data"]["role_id"]);
     }
 
     return (
       isError: (json["isError"] ?? true) as bool,
-      data: json["data"]["access_token"] as String,
+      data: json["isError"] == false
+          ? json["data"]["access_token"] as String
+          : "",
+      roleId: json["isError"] == false ? json["data"]["role_id"] as int : 0,
       errorMessage: json["errorMessage"] as String,
     );
   }
@@ -122,20 +127,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
     var result = await _accessRequest(authenToken);
 
-          if (!result.isError) {
-        //เปลี่ยนหน้าไปที่ HomeScreen
+    if (!result.isError) {
+      if (result.roleId == 1) {
+        // Student
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen(),)
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
-      } else {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(content: Text(result.errorMessage));
-          },
+      } else if (result.roleId == 2) {
+        // Officer
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const OfficerHomeScreen()),
         );
       }
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(content: Text(result.errorMessage));
+        },
+      );
+    }
   }
 
   @override
