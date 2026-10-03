@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-import '../../../config/app_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddUserScreen extends StatefulWidget {
   // ถ้าเป็น null = เพิ่มผู้ใช้
@@ -38,8 +37,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
   int? _selectedYear;
   String? _selectedPrefix;
 
-  // role เริ่มต้นเป็น 3
-  int _selectedRole = 3;
+  // role: 1 = นักศึกษา, 2 = เจ้าหน้าที่
+  int _selectedRole = 1;
 
   bool _isLoading = false;
 
@@ -90,7 +89,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     // role
     _selectedRole =
-        int.tryParse(user['role_id']?.toString() ?? '') ?? 3;
+        int.tryParse(user['role_id']?.toString() ?? '') ?? 1;
 
     // GPA
     final gpa = user['GPA'] ?? user['gpa'];
@@ -207,6 +206,26 @@ class _AddUserScreenState extends State<AddUserScreen> {
     }
 
     try {
+      // ดึง token (ทุก endpoint ของ /api/users ต้องใช้ token เจ้าหน้าที่)
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+
+      if (token == null || token.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+
+        _showMessage("Session หมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        return;
+      }
+
+      final headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      };
+
       late http.Response response;
 
       if (isEdit) {
@@ -220,9 +239,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           Uri.parse(
             'http://127.0.0.1:3000/api/users/$userId',
           ),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: headers,
           body: jsonEncode(data),
         );
       } else {
@@ -231,13 +248,15 @@ class _AddUserScreenState extends State<AddUserScreen> {
         // ==========================================
 
         response = await http.post(
-          Uri.parse(AppConfig.register),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          Uri.parse(
+            'http://127.0.0.1:3000/api/users',
+          ),
+          headers: headers,
           body: jsonEncode(data),
         );
       }
+
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
@@ -270,6 +289,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
@@ -287,6 +308,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
   // =========================================================
 
   void _showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -511,20 +534,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           items: const [
                             DropdownMenuItem(
                               value: 1,
-                              child: Text("Role 1"),
+                              child: Text("นักศึกษา"),
                             ),
                             DropdownMenuItem(
                               value: 2,
-                              child: Text("Role 2"),
-                            ),
-                            DropdownMenuItem(
-                              value: 3,
-                              child: Text("Role 3"),
+                              child: Text("เจ้าหน้าที่"),
                             ),
                           ],
                           onChanged: (value) {
                             setState(() {
-                              _selectedRole = value ?? 3;
+                              _selectedRole = value ?? 1;
                             });
                           },
                         ),
@@ -532,7 +551,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         const SizedBox(height: 22),
 
                         // =================================================
-                        // ข้อมูลนักศึกษา
+                        // ข้อมูลส่วนตัว / ข้อมูลนักศึกษา
                         // =================================================
 
                         _sectionTitle("ข้อมูลนักศึกษา"),

@@ -2,40 +2,47 @@ const http = require('http');
 const bp = require('body-parser');
 const express = require('express');
 const cors = require('cors');
+const documentModel = require('./models/document');
 const userModel = require('./models/user');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const bookings = require('./models/bookings');
 const jwt = require('./libs/jwt');
 const dateUtil = require('./libs/date_utils');
+
 const app = express();
 
 app.use(cors({
     origin: true
 }));
+
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
 
 const host = '127.0.0.1';
 const port = 3000;
 
-// ---- ตั้งค่าที่เก็บไฟล์อัปโหลด ----
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const unique =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+
         cb(null, unique + path.extname(file.originalname));
     }
 });
+
 const upload = multer({ storage });
 
-// ให้เข้าถึงไฟล์ที่อัปโหลดผ่าน URL เช่น http://127.0.0.1:3000/uploads/xxxx.pdf
 app.use('/uploads', express.static(uploadDir));
 
-// ======================================================
-// ตรวจสอบ Access Token
-// ======================================================
 const checkAccessToken = (req, res, next) => {
     let token = null;
 
@@ -79,13 +86,7 @@ const checkAccessToken = (req, res, next) => {
         });
 };
 
-
-// ======================================================
-// ตรวจสอบว่าเป็นเจ้าหน้าที่
-// role_id = 2
-// ======================================================
 const checkOfficer = (req, res, next) => {
-
     if (!req.decoded) {
         return res.status(401).json({
             isError: true,
@@ -103,14 +104,7 @@ const checkOfficer = (req, res, next) => {
     next();
 };
 
-
-// ======================================================
-// LOGIN
-// ======================================================
-
-// Login ขั้นที่ 1
 app.post('/api/authen/authen_request', async (req, res) => {
-
     console.log(req.body.authen_request);
 
     const authenRequest = req.body.authen_request;
@@ -122,15 +116,12 @@ app.post('/api/authen/authen_request', async (req, res) => {
     let response;
 
     if (result.isError) {
-
         response = {
             isError: true,
             data: '',
             errorMessage: result.errorMessage
         };
-
     } else {
-
         const payload = {
             email: result.data[0].email
         };
@@ -147,10 +138,7 @@ app.post('/api/authen/authen_request', async (req, res) => {
     res.json(response);
 });
 
-
-// Login ขั้นที่ 2
 app.post('/api/authen/access_request', async (req, res) => {
-
     const authenSignature = req.body.authen_signature;
     const authenToken = req.body.authen_token;
 
@@ -165,7 +153,6 @@ app.post('/api/authen/access_request', async (req, res) => {
     let response;
 
     if (decoded) {
-
         const result = await userModel.checkAccessRequest(
             authenSignature,
             authenToken
@@ -174,15 +161,12 @@ app.post('/api/authen/access_request', async (req, res) => {
         console.log(result);
 
         if (result.isError) {
-
             response = {
                 isError: true,
                 data: '',
                 errorMessage: result.errorMessage
             };
-
         } else {
-
             const payload = {
                 user_id: result.data[0].user_id,
                 email: result.data[0].email,
@@ -201,9 +185,7 @@ app.post('/api/authen/access_request', async (req, res) => {
                 errorMessage: ''
             };
         }
-
     } else {
-
         response = {
             isError: true,
             data: '',
@@ -214,14 +196,7 @@ app.post('/api/authen/access_request', async (req, res) => {
     res.json(response);
 });
 
-
-// ======================================================
-// PROFILE
-// ผู้ใช้ทุก Role ดูข้อมูลตัวเองได้
-// ======================================================
-
 app.get('/api/profile', checkAccessToken, async (req, res) => {
-
     console.log(req.decoded);
 
     const result = await userModel.getUserById(
@@ -231,11 +206,99 @@ app.get('/api/profile', checkAccessToken, async (req, res) => {
     res.json(result);
 });
 
-app.post('/api/register', async (req, res) => {
+app.put('/api/profile', checkAccessToken, async (req, res) => {
+    try {
+        const currentUser = await userModel.getUserById(
+            req.decoded.user_id
+        );
 
+        if (
+            currentUser.isError ||
+            !currentUser.data ||
+            currentUser.data.length === 0
+        ) {
+            return res.status(404).json({
+                isError: true,
+                errorMessage: 'ไม่พบข้อมูลผู้ใช้'
+            });
+        }
+
+        const oldData = currentUser.data[0];
+
+        const userData = {
+            email: oldData.email,
+            student_code: oldData.student_code,
+            citizen_id: oldData.citizen_id,
+            prefix: oldData.prefix,
+            first_name: oldData.first_name,
+            last_name: oldData.last_name,
+            birth_date: oldData.birth_date,
+            phone: oldData.phone,
+            faculty: oldData.faculty,
+            major: oldData.major,
+            year: oldData.year,
+            gpa: oldData.GPA,
+            role_id: req.decoded.role_id,
+            ...req.body
+        };
+
+        userData.email = oldData.email;
+        userData.role_id = req.decoded.role_id;
+
+        const result = await userModel.updateUser(
+            req.decoded.user_id,
+            userData
+        );
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            isError: true,
+            errorMessage: 'ไม่สามารถแก้ไขข้อมูลส่วนตัวได้'
+        });
+    }
+});
+
+app.post(
+    '/api/profile/image',
+    checkAccessToken,
+    upload.single('profile_image'),
+    async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    isError: true,
+                    errorMessage: 'กรุณาเลือกรูปภาพ'
+                });
+            }
+
+            const imageUrl = `/uploads/${req.file.filename}`;
+
+            const result = await userModel.updateProfileImage(
+                req.decoded.user_id,
+                imageUrl
+            );
+
+            res.json({
+                ...result,
+                image_url: imageUrl
+            });
+        } catch (error) {
+            console.error(error);
+
+            res.status(500).json({
+                isError: true,
+                errorMessage: 'ไม่สามารถอัปโหลดรูปโปรไฟล์ได้'
+            });
+        }
+    }
+);
+
+app.post('/api/register', async (req, res) => {
     const userData = {
         ...req.body,
-
         // สมัครสมาชิกทั่วไป = นักศึกษาเท่านั้น
         role_id: 1
     };
@@ -245,6 +308,47 @@ app.post('/api/register', async (req, res) => {
     res.json(result);
 });
 
+app.get('/api/documents', checkAccessToken, async (req, res) => {
+    const result = await documentModel.getDocumentsByUserId(
+        req.decoded.user_id
+    );
+
+    res.json(result);
+});
+
+// ===== จัดการผู้ใช้ (เฉพาะเจ้าหน้าที่) =====
+
+app.get('/api/users', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await userModel.getUsers());
+});
+
+app.get('/api/users/count_by_role', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await userModel.countUsersByRole());
+});
+
+app.get('/api/users/:userId', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await userModel.getUserById(req.params.userId));
+});
+
+app.post('/api/users', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await userModel.createUser(req.body));
+});
+
+app.put('/api/users/:userId', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await userModel.updateUser(req.params.userId, req.body));
+});
+
+app.delete('/api/users/:userId', checkAccessToken, checkOfficer, async (req, res) => {
+    // กันเจ้าหน้าที่ลบตัวเอง
+    if (Number(req.params.userId) === req.decoded.user_id) {
+        return res.json({
+            isError: true,
+            errorMessage: 'ไม่สามารถลบบัญชีของตัวเองได้'
+        });
+    }
+
+    res.json(await userModel.deleteUser(req.params.userId));
+});
 app.listen(port, host, () => {
     console.log(
         `Server running at http://${host}:${port}/`

@@ -129,14 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!result.isError) {
       if (result.roleId == 1) {
-        // Student
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else if (result.roleId == 2) {
-        // Officer
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const OfficerHomeScreen()),
         );
