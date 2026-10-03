@@ -1,4 +1,4 @@
-const pool = require('../libs/db_pool');
+const pool = require("../libs/db_pool");
 
 module.exports = {
   getDocumentsByUserId: async (userId) => {
@@ -26,12 +26,12 @@ module.exports = {
 
       result = {
         isError: false,
-        data: rows
+        data: rows,
       };
     } catch (error) {
       result = {
         isError: true,
-        errorMessage: error.message
+        errorMessage: error.message,
       };
     } finally {
       if (conn) conn.release();
@@ -51,12 +51,18 @@ module.exports = {
         INSERT INTO documents (user_id, doc_type, doc_name, file_path, status, note, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'pending', ?, NOW(), NOW())`;
 
-      const insertResult = await conn.query(sql, [userId, docType, docName, filePath, note]);
+      const insertResult = await conn.query(sql, [
+        userId,
+        docType,
+        docName,
+        filePath,
+        note,
+      ]);
 
       const rows = await conn.query(
         `SELECT document_id, doc_type, doc_name, file_path, status, note, created_at, updated_at
          FROM documents WHERE document_id = ?`,
-        [insertResult.insertId]
+        [insertResult.insertId],
       );
 
       result = { isError: false, data: rows[0] };
@@ -69,7 +75,14 @@ module.exports = {
     return result;
   },
 
-  updateDocument: async ({ documentId, userId, docType, docName, filePath, note }) => {
+  updateDocument: async ({
+    documentId,
+    userId,
+    docType,
+    docName,
+    filePath,
+    note,
+  }) => {
     let conn;
     let result;
 
@@ -95,8 +108,8 @@ module.exports = {
 
       const rows = await conn.query(
         `SELECT document_id, doc_type, doc_name, file_path, status, note, created_at, updated_at
-         FROM documents WHERE document_id = ?`,
-        [documentId]
+ FROM documents WHERE document_id = ? AND user_id = ?`,
+        [documentId],
       );
 
       result = { isError: false, data: rows[0] };
@@ -115,14 +128,82 @@ module.exports = {
 
     try {
       conn = await pool.getConnection();
-      await conn.query('DELETE FROM documents WHERE document_id = ? AND user_id = ?', [documentId, userId]);
-      result = { isError: false };
+
+      const deleteResult = await conn.query(
+        `DELETE FROM documents
+       WHERE document_id = ? AND user_id = ?`,
+        [documentId, userId],
+      );
+
+      console.log("========== DELETE DOCUMENT ==========");
+      console.log("documentId:", documentId);
+      console.log("userId:", userId);
+      console.log("deleteResult:", deleteResult);
+
+      if (deleteResult.affectedRows === 0) {
+        result = {
+          isError: true,
+          errorMessage: "ไม่พบเอกสาร หรือไม่มีสิทธิ์ลบเอกสารนี้",
+        };
+      } else {
+        result = {
+          isError: false,
+          errorMessage: "",
+        };
+      }
     } catch (error) {
-      result = { isError: true, errorMessage: error.message };
+      console.error("DELETE DOCUMENT MODEL ERROR:", error);
+
+      result = {
+        isError: true,
+        errorMessage: error.message,
+      };
     } finally {
       if (conn) conn.release();
     }
 
     return result;
   },
+  
+  getAllDocuments: async () => {
+    let conn;
+    let result;
+    try {
+      conn = await pool.getConnection();
+      const rows = await conn.query(`
+      SELECT document_id, user_id, doc_type, doc_name, file_path,
+             status, note, created_at, updated_at
+      FROM documents
+      ORDER BY created_at DESC`);
+      result = { isError: false, data: rows };
+    } catch (error) {
+      //result = { isError: false === true, errorMessage: error.message };
+      result = { isError: true, errorMessage: error.message };
+    } finally {
+      if (conn) conn.release();
+    }
+    return result;
+  },
+  updateStatus: async ({ documentId, status, note }) => {
+  let conn;
+  let result;
+  try {
+    conn = await pool.getConnection();
+    const r = await conn.query(
+      `UPDATE documents SET status = ?, note = ?, updated_at = NOW()
+       WHERE document_id = ?`,
+      [status, note, documentId]
+    );
+    if (r.affectedRows === 0) {
+      result = { isError: true, errorMessage: 'ไม่พบเอกสาร' };
+    } else {
+      result = { isError: false, errorMessage: '' };
+    }
+  } catch (error) {
+    result = { isError: true, errorMessage: error.message };
+  } finally {
+    if (conn) conn.release();
+  }
+  return result;
+},
 };

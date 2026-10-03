@@ -10,4 +10,5 @@ class AppConfig {
   
   // Documents
   static const String documents = "$apiBaseUrl/documents";
+  static const String officerDocuments = "$apiBaseUrl/officer/document";
 }

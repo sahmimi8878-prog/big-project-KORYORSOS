@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'user/user_screen.dart';
+import 'document/officer_document_screen.dart';
 
 class OfficerHomeScreen extends StatelessWidget {
   const OfficerHomeScreen({super.key});
@@ -82,6 +83,10 @@ class OfficerHomeScreen extends StatelessWidget {
                   title: 'จัดการเอกสาร',
                   subtitle: 'แสดง เพิ่ม แก้ไข และจัดการเอกสาร',
                   onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OfficerDocumentScreen()),
+                    );
                     // เดี๋ยวเชื่อมหน้าเอกสารตรงนี้
                   },
                 ),
