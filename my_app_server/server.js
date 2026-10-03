@@ -1,21 +1,15 @@
-const http = require("http");
-const path = require("path");
-const fs = require("fs");
-const multer = require("multer");
-const bp = require("body-parser");
-const express = require("express");
-const cors = require("cors");
-const userModel = require("./models/user");
-const documentModel = require("./models/document");
-const jwt = require("./libs/jwt");
-const dateUtil = require("./libs/date_utils");
+const http = require('http');
+const bp = require('body-parser');
+const express = require('express');
+const cors = require('cors');
+const userModel = require('./models/user');
+const jwt = require('./libs/jwt');
+const dateUtil = require('./libs/date_utils');
 const app = express();
 
-app.use(
-  cors({
-    origin: true,
-  }),
-);
+app.use(cors({
+    origin: true
+}));
 app.use(bp.urlencoded({ extended: false }));
 app.use(bp.json());
 
@@ -23,24 +17,22 @@ const host = "127.0.0.1";
 const port = 3000;
 
 // ---- ตั้งค่าที่เก็บไฟล์อัปโหลด ----
-const uploadDir = path.join(__dirname, "uploads");
+const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
-  },
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, unique + path.extname(file.originalname));
+    }
 });
+
 const upload = multer({ storage });
 
 // ให้เข้าถึงไฟล์ที่อัปโหลดผ่าน URL เช่น http://127.0.0.1:3000/uploads/xxxx.pdf
-app.use("/uploads", express.static(uploadDir));
+app.use('/uploads', express.static(uploadDir));
 
-// ======================================================
-// ตรวจสอบ Access Token
-// ======================================================
 const checkAccessToken = (req, res, next) => {
   let token = null;
 
@@ -85,17 +77,19 @@ const checkAccessToken = (req, res, next) => {
     });
 };
 
+
 // ======================================================
 // ตรวจสอบว่าเป็นเจ้าหน้าที่
 // role_id = 2
 // ======================================================
 const checkOfficer = (req, res, next) => {
-  if (!req.decoded) {
-    return res.status(401).json({
-      isError: true,
-      errorMessage: "ยังไม่ได้เข้าสู่ระบบ",
-    });
-  }
+
+    if (!req.decoded) {
+        return res.status(401).json({
+            isError: true,
+            errorMessage: 'ยังไม่ได้เข้าสู่ระบบ',
+        });
+    }
 
   if (req.decoded.role_id !== 2) {
     return res.status(403).json({
@@ -107,13 +101,15 @@ const checkOfficer = (req, res, next) => {
   next();
 };
 
+
 // ======================================================
 // LOGIN
 // ======================================================
 
 // Login ขั้นที่ 1
-app.post("/api/authen/authen_request", async (req, res) => {
-  console.log(req.body.authen_request);
+app.post('/api/authen/authen_request', async (req, res) => {
+
+    console.log(req.body.authen_request);
 
   const authenRequest = req.body.authen_request;
 
@@ -123,16 +119,19 @@ app.post("/api/authen/authen_request", async (req, res) => {
 
   let response;
 
-  if (result.isError) {
-    response = {
-      isError: true,
-      data: "",
-      errorMessage: result.errorMessage,
-    };
-  } else {
-    const payload = {
-      email: result.data[0].email,
-    };
+    if (result.isError) {
+
+        response = {
+            isError: true,
+            data: '',
+            errorMessage: result.errorMessage
+        };
+
+    } else {
+
+        const payload = {
+            email: result.data[0].email
+        };
 
     const authenToken = jwt.sign(payload);
 
@@ -146,10 +145,12 @@ app.post("/api/authen/authen_request", async (req, res) => {
   res.json(response);
 });
 
+
 // Login ขั้นที่ 2
-app.post("/api/authen/access_request", async (req, res) => {
-  const authenSignature = req.body.authen_signature;
-  const authenToken = req.body.authen_token;
+app.post('/api/authen/access_request', async (req, res) => {
+
+    const authenSignature = req.body.authen_signature;
+    const authenToken = req.body.authen_token;
 
   let decoded;
 
@@ -161,239 +162,179 @@ app.post("/api/authen/access_request", async (req, res) => {
 
   let response;
 
-  if (decoded) {
-    const result = await userModel.checkAccessRequest(
-      authenSignature,
-      authenToken,
-    );
+    if (decoded) {
+
+        const result = await userModel.checkAccessRequest(
+            authenSignature,
+            authenToken
+        );
 
     console.log(result);
 
-    if (result.isError) {
-      response = {
-        isError: true,
-        data: "",
-        errorMessage: result.errorMessage,
-      };
-    } else {
-      const payload = {
-        user_id: result.data[0].user_id,
-        email: result.data[0].email,
-        role_id: result.data[0].role_id,
-        date: dateUtil.getCurrentDateForToken(),
-      };
+        if (result.isError) {
+
+            response = {
+                isError: true,
+                data: '',
+                errorMessage: result.errorMessage
+            };
+
+        } else {
+
+            const payload = {
+                user_id: result.data[0].user_id,
+                email: result.data[0].email,
+                role_id: result.data[0].role_id,
+                date: dateUtil.getCurrentDateForToken()
+            };
 
       const accessToken = jwt.sign(payload);
 
-      response = {
-        isError: false,
-        data: {
-          access_token: accessToken,
-          role_id: result.data[0].role_id,
-        },
-        errorMessage: "",
-      };
+            response = {
+                isError: false,
+                data: {
+                    access_token: accessToken,
+                    role_id: result.data[0].role_id
+                },
+                errorMessage: ''
+            };
+        }
+
+    } else {
+
+        response = {
+            isError: true,
+            data: '',
+            errorMessage: 'ข้อมูลไม่ถูกต้อง'
+        };
     }
-  } else {
-    response = {
-      isError: true,
-      data: "",
-      errorMessage: "ข้อมูลไม่ถูกต้อง",
-    };
-  }
 
   res.json(response);
 });
 
-// เจ้าหน้าที่: ดูเอกสารทั้งหมด
-app.get(
-    '/api/officer/documents',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-        const result = await documentModel.getAllDocuments();
-        res.json(result);
-    }
-);
 
 // ======================================================
 // PROFILE
 // ผู้ใช้ทุก Role ดูข้อมูลตัวเองได้
 // ======================================================
 
-app.get("/api/profile", checkAccessToken, async (req, res) => {
-  console.log(req.decoded);
+app.get('/api/profile', checkAccessToken, async (req, res) => {
+
+    console.log(req.decoded);
 
   const result = await userModel.getUserById(req.decoded.user_id);
 
   res.json(result);
 });
 
-app.post("/api/register", async (req, res) => {
-  const userData = {
-    ...req.body,
+app.put('/api/profile', checkAccessToken, async (req, res) => {
+    try {
+        const currentUser = await userModel.getUserById(
+            req.decoded.user_id
+        );
 
-    // สมัครสมาชิกทั่วไป = นักศึกษาเท่านั้น
-    role_id: 1,
-  };
+        if (
+            currentUser.isError ||
+            !currentUser.data ||
+            currentUser.data.length === 0
+        ) {
+            return res.status(404).json({
+                isError: true,
+                errorMessage: 'ไม่พบข้อมูลผู้ใช้'
+            });
+        }
+
+        const oldData = currentUser.data[0];
+
+        const userData = {
+            email: oldData.email,
+            student_code: oldData.student_code,
+            citizen_id: oldData.citizen_id,
+            prefix: oldData.prefix,
+            first_name: oldData.first_name,
+            last_name: oldData.last_name,
+            birth_date: oldData.birth_date,
+            phone: oldData.phone,
+            faculty: oldData.faculty,
+            major: oldData.major,
+            year: oldData.year,
+            gpa: oldData.GPA,
+            role_id: req.decoded.role_id,
+            ...req.body
+        };
+
+        userData.email = oldData.email;
+        userData.role_id = req.decoded.role_id;
+
+        const result = await userModel.updateUser(
+            req.decoded.user_id,
+            userData
+        );
+
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            isError: true,
+            errorMessage: 'ไม่สามารถแก้ไขข้อมูลส่วนตัวได้'
+        });
+    }
+});
+
+app.post(
+    '/api/profile/image',
+    checkAccessToken,
+    upload.single('profile_image'),
+    async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    isError: true,
+                    errorMessage: 'กรุณาเลือกรูปภาพ'
+                });
+            }
+
+            const imageUrl = `/uploads/${req.file.filename}`;
+
+            const result = await userModel.updateProfileImage(
+                req.decoded.user_id,
+                imageUrl
+            );
+
+            res.json({
+                ...result,
+                image_url: imageUrl
+            });
+        } catch (error) {
+            console.error(error);
+
+            res.status(500).json({
+                isError: true,
+                errorMessage: 'ไม่สามารถอัปโหลดรูปโปรไฟล์ได้'
+            });
+        }
+    }
+);
+
+app.post('/api/register', async (req, res) => {
+
+    const userData = {
+        ...req.body,
+
+        // สมัครสมาชิกทั่วไป = นักศึกษาเท่านั้น
+        role_id: 1
+    };
 
   const result = await userModel.createUser(userData);
 
   res.json(result);
 });
 
-// ======================================================
-// DOCUMENTS
-// ======================================================
-
-// ดูเอกสารของตัวเอง
-app.get("/api/documents", checkAccessToken, async (req, res) => {
-  const result = await documentModel.getDocumentsByUserId(req.decoded.user_id);
-
-  res.json(result);
-});
-
-// เพิ่มเอกสาร
-app.post(
-  "/api/documents",
-  checkAccessToken,
-  upload.single("file"),
-  async (req, res) => {
-    try {
-      console.log("========== ADD DOCUMENT ==========");
-      console.log("User:", req.decoded);
-      console.log("Body:", req.body);
-      console.log("File:", req.file);
-
-      if (!req.file) {
-        return res.status(400).json({
-          isError: true,
-          data: null,
-          errorMessage: "กรุณาแนบไฟล์เอกสาร",
-        });
-      }
-
-      const result = await documentModel.addDocument({
-        userId: req.decoded.user_id,
-        docType: req.body.doc_type,
-        docName: req.body.doc_name,
-        filePath: `/uploads/${req.file.filename}`,
-        note: req.body.note || null,
-      });
-
-      if (result.isError) {
-        return res.status(400).json(result);
-      }
-
-      return res.status(201).json(result);
-    } catch (error) {
-      console.error("ADD DOCUMENT ERROR:", error);
-
-      return res.status(500).json({
-        isError: true,
-        data: null,
-        errorMessage: error.message,
-      });
-    }
-  },
-);
-
-// แก้ไขเอกสาร
-app.put(
-    '/api/documents/:id',
-    checkAccessToken,
-    upload.single('file'),
-    async (req, res) => {
-        try {
-            const documentId = parseInt(req.params.id);
-            if (isNaN(documentId)) {
-                return res.status(400).json({
-                    isError: true,
-                    errorMessage: 'document_id ไม่ถูกต้อง'
-                });
-            }
-
-            const result = await documentModel.updateDocument({
-                documentId: documentId,
-                userId: req.decoded.user_id,
-                docType: req.body.doc_type,
-                docName: req.body.doc_name,
-                filePath: req.file ? `/uploads/${req.file.filename}` : null,
-                note: req.body.note || null
-            });
-
-            if (result.isError || !result.data) {
-                return res.status(404).json({
-                    isError: true,
-                    errorMessage: result.errorMessage || 'ไม่พบเอกสาร หรือไม่มีสิทธิ์แก้ไข'
-                });
-            }
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('UPDATE DOCUMENT ERROR:', error);
-            return res.status(500).json({ isError: true, errorMessage: error.message });
-        }
-    }
-);
 
 // ======================================================
-// ลบเอกสาร
-// ผู้ใช้ลบเอกสารของตัวเองได้
+// START SERVER
 // ======================================================
-
-app.delete("/api/documents/:id", checkAccessToken, async (req, res) => {
-  try {
-    const documentId = parseInt(req.params.id);
-
-    if (isNaN(documentId)) {
-      return res.status(400).json({
-        isError: true,
-        errorMessage: "document_id ไม่ถูกต้อง",
-      });
-    }
-
-    const result = await documentModel.deleteDocument({
-      documentId: documentId,
-      userId: req.decoded.user_id,
-    });
-
-    if (result.isError) {
-      return res.status(404).json(result);
-    }
-
-    return res.status(200).json({
-      isError: false,
-      errorMessage: "",
-    });
-  } catch (error) {
-    console.error("DELETE DOCUMENT ERROR:", error);
-
-    return res.status(500).json({
-      isError: true,
-      errorMessage: error.message,
-    });
-  }
-});
-
-// เจ้าหน้าที่: อนุมัติ / ปฏิเสธ
-app.put(
-    '/api/officer/documents/:id/status',
-    checkAccessToken,
-    checkOfficer,
-    async (req, res) => {
-        const documentId = parseInt(req.params.id);
-        const { status, note } = req.body;
-
-        if (isNaN(documentId) || !['approved', 'rejected', 'pending'].includes(status)) {
-            return res.status(400).json({ isError: true, errorMessage: 'ข้อมูลไม่ถูกต้อง' });
-        }
-
-        const result = await documentModel.updateStatus({
-            documentId, status, note: note || null
-        });
-        return res.status(result.isError ? 404 : 200).json(result);
-    }
-);
 
 app.listen(port, host, () => {
   console.log(`Server running at http://${host}:${port}/`);
