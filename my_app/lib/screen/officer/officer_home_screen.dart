@@ -1,8 +1,30 @@
 import 'package:flutter/material.dart';
-import 'user/user_screen.dart';
 
-class OfficerHomeScreen extends StatelessWidget {
+import '../../widgets/user_role_chart.dart';
+import 'user/user_screen.dart';
+import '../../utils/auth_utils.dart';
+
+class OfficerHomeScreen extends StatefulWidget {
   const OfficerHomeScreen({super.key});
+
+  @override
+  State<OfficerHomeScreen> createState() => _OfficerHomeScreenState();
+}
+
+class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
+  // เปลี่ยนค่านี้เพื่อให้ dashboard โหลดข้อมูลใหม่ (เช่น หลังกลับจากหน้าจัดการผู้ใช้)
+  int _reloadKey = 0;
+
+  Future<void> _openUserScreen() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const UserScreen()),
+    );
+
+    setState(() {
+      _reloadKey++;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,28 +32,29 @@ class OfficerHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'หน้าหลักเจ้าหน้าที่',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xfff8d7f3),
         foregroundColor: const Color(0xff8B6FA3),
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () => AuthUtil.logout(context),
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'ออกจากระบบ',
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xfff8d7f3),
-              Color(0xffeef2ff),
-              Colors.white,
-            ],
+            colors: [Color(0xfff8d7f3), Color(0xffeef2ff), Colors.white],
           ),
         ),
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,34 +71,47 @@ class OfficerHomeScreen extends StatelessWidget {
                 const SizedBox(height: 8),
 
                 const Text(
-                  'เลือกเมนูที่ต้องการดำเนินการ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  'ภาพรวมระบบและเมนูจัดการ',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
 
                 const SizedBox(height: 25),
 
-                // จัดการข้อมูลผู้ใช้
+                // ==================================================
+                // Dashboard
+                // แต่ละคนทำ widget ของตัวเอง แล้วเพิ่มบรรทัดเดียวตรงนี้
+                // ==================================================
+                _sectionTitle('ภาพรวมระบบ'),
+
+                const SizedBox(height: 12),
+
+                // ส่วนของเรา: ผู้ใช้
+                UserRoleChart(key: ValueKey(_reloadKey)),
+
+                // ส่วนของเพื่อน (เพิ่มตรงนี้)
+                // const SizedBox(height: 16),
+                // DocumentSummaryCard(),
+                // const SizedBox(height: 16),
+                // BookingSummaryCard(),
+                const SizedBox(height: 28),
+
+                // ==================================================
+                // เมนูจัดการ
+                // ==================================================
+                _sectionTitle('เมนูจัดการ'),
+
+                const SizedBox(height: 12),
+
                 _buildMenuCard(
                   context,
                   icon: Icons.people_rounded,
                   title: 'จัดการข้อมูลผู้ใช้',
-                  subtitle: 'แสดง เพิ่ม และแก้ไขข้อมูลผู้ใช้',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserScreen(),
-                      ),
-                    );
-                  },
+                  subtitle: 'แสดง เพิ่ม แก้ไข และลบข้อมูลผู้ใช้',
+                  onTap: _openUserScreen,
                 ),
 
                 const SizedBox(height: 16),
 
-                // จัดการเอกสาร
                 _buildMenuCard(
                   context,
                   icon: Icons.description_rounded,
@@ -89,6 +125,17 @@ class OfficerHomeScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.bold,
+        color: Color(0xff8B6FA3),
       ),
     );
   }
@@ -126,15 +173,9 @@ class OfficerHomeScreen extends StatelessWidget {
                 color: const Color(0xffffe5f4),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Icon(
-                icon,
-                size: 30,
-                color: const Color(0xffb47aaa),
-              ),
+              child: Icon(icon, size: 30, color: const Color(0xffb47aaa)),
             ),
-
             const SizedBox(width: 15),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,20 +188,14 @@ class OfficerHomeScreen extends StatelessWidget {
                       color: Color(0xff765982),
                     ),
                   ),
-
                   const SizedBox(height: 5),
-
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
             ),
-
             const Icon(
               Icons.arrow_forward_ios_rounded,
               size: 18,
