@@ -362,8 +362,6 @@ app.post('/api/admin/open-days', checkAccessToken, checkOfficer, async (req, res
     res.json(await bookings.saveOpenDays(req.body.days));
 });
 
-=========
->>>>>>>>> Temporary merge branch 2
 app.listen(port, host, () => {
     console.log(`Server running at http://${host}:${port}/`);
 });

@@ -1,10 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-<<<<<<<<< Temporary merge branch 1
-=========
 import 'package:my_app/screen/booking_list_screen.dart';
->>>>>>>>> Temporary merge branch 2
+
 import 'package:my_app/screen/student/profile_screen.dart';
 
 import '../../config/app_colors.dart';
@@ -13,12 +11,10 @@ import '../../utils/app_api.dart';
 import '../../widgets/menu_card__widget.dart';
 import '../../widgets/navbar.dart';
 import '../officer/user/user_screen.dart';
-<<<<<<<<< Temporary merge branch 1
+
 import '../booking_calendar_screen.dart';
 import '../booking_list_screen.dart';
 
-=========
->>>>>>>>> Temporary merge branch 2
 import 'package:my_app/models/document_model.dart';
 import 'package:my_app/service/document_service.dart';
 import 'package:my_app/screen/document/document_list_screen.dart';
