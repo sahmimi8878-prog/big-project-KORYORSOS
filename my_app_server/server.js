@@ -240,10 +240,109 @@ app.post('/api/register', async (req, res) => {
     res.json(result);
 });
 
+// ===== เอกสาร =====
+
 app.get('/api/documents', checkAccessToken, async (req, res) => {
     const result = await documentModel.getDocumentsByUserId(req.decoded.user_id);
     res.json(result);
 });
+
+// เจ้าหน้าที่: ดูเอกสารของทุกคน (ต้องอยู่ก่อน /:id)
+app.get('/api/admin/documents', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await documentModel.getAllDocuments());
+});
+
+// เจ้าหน้าที่: เปลี่ยนสถานะเอกสาร + หมายเหตุ
+app.put('/api/admin/documents/:id/status', checkAccessToken, checkOfficer, async (req, res) => {
+    const { status, note } = req.body;
+
+    if (!status) {
+        return res.json({ isError: true, errorMessage: 'กรุณาระบุสถานะ' });
+    }
+
+    res.json(await documentModel.updateStatus({
+        documentId: req.params.id,
+        status,
+        note: note || ''
+    }));
+});
+
+// ดึงเอกสารรายตัวตาม id (เฉพาะเอกสารของผู้ใช้ที่ล็อกอิน)
+app.get('/api/documents/:id', checkAccessToken, async (req, res) => {
+    const result = await documentModel.getDocumentsByUserId(req.decoded.user_id);
+
+    if (result.isError) return res.json(result);
+
+    const doc = (result.data || []).find(
+        d => String(d.document_id) === String(req.params.id)
+    );
+
+    res.json(
+        doc
+            ? { isError: false, data: [doc], errorMessage: '' }
+            : { isError: true, data: '', errorMessage: 'ไม่พบเอกสาร' }
+    );
+});
+
+// ยื่นเอกสารใหม่ (multipart/form-data: ไฟล์ชื่อ field "file" + doc_type, doc_name, note)
+app.post('/api/documents', checkAccessToken, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                isError: true,
+                errorMessage: 'กรุณาเลือกไฟล์เอกสาร'
+            });
+        }
+
+        const { doc_type, doc_name, note } = req.body;
+
+        res.json(await documentModel.addDocument({
+            userId: req.decoded.user_id,
+            docType: doc_type,
+            docName: doc_name || req.file.originalname,
+            filePath: `/uploads/${req.file.filename}`,
+            note: note || ''
+        }));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            isError: true,
+            errorMessage: 'ไม่สามารถยื่นเอกสารได้'
+        });
+    }
+});
+
+// แก้ไขเอกสาร (ไม่แนบไฟล์ใหม่ = ใช้ไฟล์เดิม)
+app.put('/api/documents/:id', checkAccessToken, upload.single('file'), async (req, res) => {
+    try {
+        const { doc_type, doc_name, note } = req.body;
+
+        res.json(await documentModel.updateDocument({
+            documentId: req.params.id,
+            userId: req.decoded.user_id,
+            docType: doc_type,
+            docName: doc_name,
+            filePath: req.file ? `/uploads/${req.file.filename}` : null,
+            note: note || ''
+        }));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            isError: true,
+            errorMessage: 'ไม่สามารถแก้ไขเอกสารได้'
+        });
+    }
+});
+
+// ลบเอกสาร (ลบทั้งแถวและไฟล์จริง)
+app.delete('/api/documents/:id', checkAccessToken, async (req, res) => {
+    res.json(await documentModel.deleteDocument({
+        documentId: req.params.id,
+        userId: req.decoded.user_id
+    }));
+});
+
+// ===== ผู้ใช้ (เฉพาะเจ้าหน้าที่) =====
 
 app.get('/api/users', checkAccessToken, checkOfficer, async (req, res) => {
     res.json(await userModel.getUsers());
