@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:my_app/screen/booking_calendar_screen.dart';
+import 'package:my_app/screen/document/document_list_screen.dart';
 
 import '../../config/app_colors.dart';
 import '../../config/app_config.dart';
@@ -147,9 +149,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onNavTap(int index) {
     switch (index) {
       case 0:
-        // อยู่หน้า Home อยู่แล้ว
         break;
-      case 3:
+
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DocumentListScreen()),
+        );
+        break;
+
+      case 2:
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -157,16 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
         break;
-      case 4:
+
+      case 3:
         _openProfile();
         break;
-      default:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('เมนูนี้กำลังพัฒนา 🚧'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
     }
   }
 
@@ -424,7 +427,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
   // ==================================================
   // Build
   // ==================================================
@@ -487,65 +489,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 // ==================================================
                 const SizedBox(height: 22),
 
-                Container(
-  width: double.infinity,
-  padding: const EdgeInsets.all(20),
-  decoration: BoxDecoration(
-    color: const Color(0xffffeef8),
-    borderRadius: BorderRadius.circular(20),
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Row(
-        children: [
-          Icon(
-            Icons.description,
-            size: 30,
-            color: Color(0xff9b65a8),
-          ),
-          SizedBox(width: 10),
-          Text(
-            'ยื่นเอกสาร',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-
-      const SizedBox(height: 10),
-
-      const Text(
-        'ส่งเอกสารประกอบการกู้ยืม และตรวจสอบสถานะเอกสาร',
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey,
-        ),
-      ),
-
-      const SizedBox(height: 15),
-
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const DocumentListScreen(),
-              ),
-            );
-          },
-          icon: const Icon(Icons.upload_file),
-          label: const Text('ยื่นเอกสาร'),
-        ),
-      ),
-    ],
-  ),
-),
+                MenuCard(
+                  title: 'ยื่นเอกสาร',
+                  subtitle: 'ส่งเอกสารประกอบการกู้ยืม และตรวจสอบสถานะเอกสาร',
+                  titleSize: 22,
+                  leadingIcon: Icons.description,
+                  color: const Color(0xffffeef8),
+                  buttonLabel: 'ยื่นเอกสาร',
+                  buttonIcon: Icons.upload_file,
+                  onButtonTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DocumentListScreen(),
+                      ),
+                    );
+                  },
+                ),
 
                 const SizedBox(height: 22),
 
