@@ -349,6 +349,93 @@ app.delete('/api/users/:userId', checkAccessToken, checkOfficer, async (req, res
 
     res.json(await userModel.deleteUser(req.params.userId));
 });
+
+// ===== จองคิว =====
+// /list และ /slots ต้องอยู่ก่อน /:bookingId
+
+app.get('/api/bookings/list', checkAccessToken, async (req, res) => {
+    res.json(await bookings.getBookings(req.decoded.user_id));
+});
+
+app.get('/api/bookings/slots', checkAccessToken, async (req, res) => {
+    res.json(await bookings.getSlotCounts(req.query.date));
+});
+
+app.get('/api/bookings/open-days', checkAccessToken, async (req, res) => {
+    res.json(await bookings.getOpenDays());
+});
+
+app.get('/api/bookings/:bookingId', checkAccessToken, async (req, res) => {
+    res.json(await bookings.getBookingById(req.params.bookingId, req.decoded.user_id));
+});
+
+app.post('/api/bookings/create', checkAccessToken, async (req, res) => {
+    const { service_type, booking_date, time_slot } = req.body;
+
+    res.json(await bookings.createBooking(
+        req.decoded.user_id, service_type, booking_date, time_slot
+    ));
+});
+
+app.post('/api/bookings/update', checkAccessToken, async (req, res) => {
+    const { booking_id, service_type, booking_date, time_slot } = req.body;
+
+    res.json(await bookings.updateBooking(
+        req.decoded.user_id, booking_id, service_type, booking_date, time_slot
+    ));
+});
+
+app.post('/api/bookings/delete', checkAccessToken, async (req, res) => {
+    res.json(await bookings.deleteBooking(req.body.booking_id, req.decoded.user_id));
+});
+
+// ===== จัดการการจอง (เฉพาะเจ้าหน้าที่) =====
+
+app.get('/api/admin/bookings', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await bookings.getAllBookings(req.query.date));
+});
+
+app.post('/api/admin/bookings/create', checkAccessToken, checkOfficer, async (req, res) => {
+    const { user_id, service_type, booking_date, time_slot } = req.body;
+
+    if (!user_id) {
+        return res.json({ isError: true, data: '', errorMessage: 'กรุณาเลือกนักศึกษา' });
+    }
+
+    res.json(await bookings.createBooking(user_id, service_type, booking_date, time_slot));
+});
+
+app.post('/api/admin/bookings/update', checkAccessToken, checkOfficer, async (req, res) => {
+    const { booking_id, service_type, booking_date, time_slot } = req.body;
+
+    const ownerId = await bookings.getBookingOwner(booking_id);
+
+    if (ownerId === null) {
+        return res.json({ isError: true, data: '', errorMessage: 'ไม่พบข้อมูลการจอง' });
+    }
+
+    res.json(await bookings.updateBooking(ownerId, booking_id, service_type, booking_date, time_slot));
+});
+
+app.post('/api/admin/bookings/delete', checkAccessToken, checkOfficer, async (req, res) => {
+    const ownerId = await bookings.getBookingOwner(req.body.booking_id);
+
+    if (ownerId === null) {
+        return res.json({ isError: true, data: '', errorMessage: 'ไม่พบข้อมูลการจอง' });
+    }
+
+    res.json(await bookings.deleteBooking(req.body.booking_id, ownerId));
+});
+
+// ตั้งค่าการเปิดรับการจองรายวัน (เจ้าหน้าที่)
+app.get('/api/admin/open-days', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await bookings.getOpenDaysAdmin(req.query.from, req.query.to));
+});
+
+app.post('/api/admin/open-days', checkAccessToken, checkOfficer, async (req, res) => {
+    res.json(await bookings.saveOpenDays(req.body.days));
+});
+
 app.listen(port, host, () => {
     console.log(
         `Server running at http://${host}:${port}/`

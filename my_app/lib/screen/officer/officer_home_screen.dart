@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/user_role_chart.dart';
+import 'booking/booking_manage_screen.dart';
 import 'user/user_screen.dart';
 import '../../utils/auth_utils.dart';
 
@@ -119,6 +120,23 @@ class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
                   subtitle: 'แสดง เพิ่ม แก้ไข และจัดการเอกสาร',
                   onTap: () {
                     // เดี๋ยวเชื่อมหน้าเอกสารตรงนี้
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildMenuCard(
+                  context,
+                  icon: Icons.event_note_rounded,
+                  title: 'จัดการระบบการจอง',
+                  subtitle: 'แสดง แก้ไข และลบรายการจองของนักศึกษา',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BookingManageScreen(),
+                      ),
+                    );
                   },
                 ),
               ],

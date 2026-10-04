@@ -46,7 +46,10 @@ class BookingListWidget extends StatelessWidget {
             ],
           ),
           child: ListTile(
-            leading: const Icon(Icons.event_available, color: AppColors.cardPink),
+            leading: const Icon(
+              Icons.event_available,
+              color: AppColors.cardPink,
+            ),
             title: Text(
               '${DateUtil.getThaiDate(item.getBookingDate())}  ${item.timeSlot}',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
