@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/document_model.dart';
 import 'package:my_app/service/document_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:my_app/config/app_config.dart';
 
 // ---------- Theme colors ----------
 const kPrimary = Color(0xFF7A4F86);
@@ -56,15 +58,25 @@ extension DocumentModelUi on DocumentModel {
   }
 }
 
-// ---------- Page ----------
-class OfficerDocumentScreen extends StatefulWidget {
-  const OfficerDocumentScreen({super.key});
+// ---------- Page: เอกสารของนักศึกษาแต่ละคน ----------
+/// หน้ารวมเอกสารของนักศึกษา 1 คน (เจ้าหน้าที่เปิดจากรายชื่อนักศึกษา)
+class StudentDocumentsScreen extends StatefulWidget {
+  final int userId;
+  final String studentName;
+  final String? studentCode;
+
+  const StudentDocumentsScreen({
+    super.key,
+    required this.userId,
+    required this.studentName,
+    this.studentCode,
+  });
 
   @override
-  State<OfficerDocumentScreen> createState() => _OfficerDocumentScreenState();
+  State<StudentDocumentsScreen> createState() => _StudentDocumentsScreenState();
 }
 
-class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
+class _StudentDocumentsScreenState extends State<StudentDocumentsScreen> {
   List<DocumentModel> _docs = [];
   bool _loading = true;
   String? _error;
@@ -89,7 +101,7 @@ class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
       if (res.isError) {
         _error = res.errorMessage;
       } else {
-        _docs = res.data;
+        _docs = res.data.where((d) => d.userId == widget.userId).toList();
       }
     });
   }
@@ -117,9 +129,58 @@ class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
     }
   }
 
+  Future<void> _openFile(DocumentModel doc) async {
+    try {
+      String filePath = doc.filePath.trim();
+
+      // server ของเรา
+      const serverUrl = 'http://127.0.0.1:3000';
+
+      String url;
+
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        url = filePath;
+      } else if (filePath.startsWith('/')) {
+        url = '$serverUrl$filePath';
+      } else {
+        url = '$serverUrl/$filePath';
+      }
+
+      debugPrint('================================');
+      debugPrint('FILE PATH: $filePath');
+      debugPrint('FILE URL : $url');
+      debugPrint('================================');
+
+      final uri = Uri.parse(url);
+
+      // เปิดโดยตรง ไม่ใช้ canLaunchUrl
+      final result = await launchUrl(
+        uri,
+        webOnlyWindowName: '_blank',
+      );
+
+      debugPrint('OPEN RESULT: $result');
+
+      if (!result && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ไม่สามารถเปิดเอกสารได้')),
+        );
+      }
+    } catch (e) {
+      debugPrint('OPEN FILE ERROR: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เปิดเอกสารไม่สำเร็จ: $e')),
+      );
+    }
+  }
+
   void _showDetail(DocumentModel doc) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -129,33 +190,105 @@ class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(doc.docType,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            // ชื่อประเภทเอกสาร
+            Text(
+              doc.docType,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: kPrimary,
+              ),
+            ),
+
             const SizedBox(height: 6),
-            Text(doc.docName),
+
+            // ชื่อไฟล์
+            Text(
+              doc.docName,
+              style: const TextStyle(fontSize: 15),
+            ),
+
             const SizedBox(height: 6),
-            Text('สถานะ: ${doc.docStatus.label}  ·  ${doc.dateText}',
-                style: const TextStyle(fontSize: 12, color: kTextMuted)),
+
+            // สถานะ + วันที่
+            Text(
+              'สถานะ: ${doc.docStatus.label} · ${doc.dateText}',
+              style: const TextStyle(fontSize: 12, color: kTextMuted),
+            ),
+
+            // หมายเหตุ ถ้ามี
             if (doc.note != null && doc.note!.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text('หมายเหตุ: ${doc.note}'),
+              const SizedBox(height: 8),
+              Text(
+                'หมายเหตุ: ${doc.note}',
+                style: const TextStyle(fontSize: 13, color: Colors.redAccent),
+              ),
             ],
-            const SizedBox(height: 16),
-            Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _setStatus(doc, 'rejected'),
-                  child: const Text('ไม่อนุมัติ'),
+
+            const SizedBox(height: 20),
+
+            // ปุ่มเปิดไฟล์
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _openFile(doc),
+                icon: const Icon(Icons.picture_as_pdf_rounded, color: kAccent),
+                label: const Text(
+                  'เปิดดูเอกสาร',
+                  style: TextStyle(color: kPrimary, fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: kAccent),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _setStatus(doc, 'approved'),
-                  child: const Text('อนุมัติ'),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ข้อความบอกเจ้าหน้าที่
+            const Text(
+              'กรุณาตรวจสอบเอกสารก่อนเลือกผลการตรวจสอบ',
+              style: TextStyle(fontSize: 12, color: kTextMuted),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ปุ่มผลการตรวจสอบ
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _setStatus(doc, 'rejected'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('ไม่อนุมัติ'),
+                  ),
                 ),
-              ),
-            ]),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _setStatus(doc, 'approved'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('อนุมัติ'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -180,8 +313,17 @@ class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           foregroundColor: kPrimary,
-          title: const Text('จัดการเอกสาร',
-              style: TextStyle(color: kPrimary, fontWeight: FontWeight.w600)),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.studentName,
+                  style: const TextStyle(
+                      color: kPrimary, fontWeight: FontWeight.w600, fontSize: 18)),
+              if (widget.studentCode != null)
+                Text('รหัสนักศึกษา ${widget.studentCode}',
+                    style: const TextStyle(color: kTextMuted, fontSize: 12)),
+            ],
+          ),
         ),
         body: Column(
           children: [
@@ -197,7 +339,16 @@ class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
                     valueColor: const Color(0xFFB7791F),
                   ),
                   const SizedBox(width: 10),
-                  _StatCard(label: 'อนุมัติแล้ว', value: '${_count(DocStatus.approved)}'),
+                  _StatCard(
+                    label: 'อนุมัติแล้ว',
+                    value: '${_count(DocStatus.approved)}',
+                  ),
+                  const SizedBox(width: 10),
+                  _StatCard(
+                    label: 'ไม่อนุมัติ',
+                    value: '${_count(DocStatus.rejected)}',
+                    valueColor: const Color(0xFF8E2A2A),
+                  ),
                 ],
               ),
             ),
@@ -287,6 +438,323 @@ class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
   }
 }
 
+// ---------- Page: รายชื่อนักศึกษา ----------
+class _StudentGroup {
+  final int userId;
+  final String name;
+  final String? code;
+  final List<DocumentModel> docs = [];
+
+  _StudentGroup({required this.userId, required this.name, this.code});
+
+  int get pending => docs.where((d) => d.docStatus == DocStatus.pending).length;
+}
+
+class OfficerDocumentScreen extends StatefulWidget {
+  const OfficerDocumentScreen({super.key});
+
+  @override
+  State<OfficerDocumentScreen> createState() => _OfficerDocumentScreenState();
+}
+
+class _OfficerDocumentScreenState extends State<OfficerDocumentScreen> {
+  List<_StudentGroup> _students = [];
+  int _docCount = 0;
+  bool _loading = true;
+  String? _error;
+  bool _onlyPending = false;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final res = await DocumentService.getAllDocuments();
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      if (res.isError) {
+        _error = res.errorMessage;
+        return;
+      }
+      final map = <int, _StudentGroup>{};
+      for (final d in res.data) {
+        map
+            .putIfAbsent(
+              d.userId,
+              () => _StudentGroup(
+                userId: d.userId,
+                name: d.studentName ?? 'ผู้ใช้ #${d.userId}',
+                code: d.studentCode,
+              ),
+            )
+            .docs
+            .add(d);
+      }
+      _docCount = res.data.length;
+      // คนที่มีเอกสารรอตรวจสอบขึ้นก่อน
+      _students = map.values.toList()
+        ..sort((a, b) {
+          final c = b.pending.compareTo(a.pending);
+          return c != 0 ? c : a.name.compareTo(b.name);
+        });
+    });
+  }
+
+  List<_StudentGroup> get _visible => _students.where((s) {
+        if (_onlyPending && s.pending == 0) return false;
+        final q = _query.trim().toLowerCase();
+        return q.isEmpty ||
+            s.name.toLowerCase().contains(q) ||
+            (s.code ?? '').toLowerCase().contains(q);
+      }).toList();
+
+  int _countStatus(DocStatus st) => _students.fold(
+      0, (sum, s) => sum + s.docs.where((d) => d.docStatus == st).length);
+
+  Future<void> _open(_StudentGroup s) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudentDocumentsScreen(
+          userId: s.userId,
+          studentName: s.name,
+          studentCode: s.code,
+        ),
+      ),
+    );
+    if (mounted) _load(); // กลับมาแล้วรีเฟรช เผื่อมีการเปลี่ยนสถานะ
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final list = _visible;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF8D7F0), Color(0xFFEEF0FF), Color(0xFFFCFCFF)],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: kPrimary,
+          title: const Text('จัดการเอกสาร',
+              style: TextStyle(color: kPrimary, fontWeight: FontWeight.w600)),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              child: Row(
+                children: [
+                  _StatCard(label: 'ทั้งหมด', value: '$_docCount'),
+                  const SizedBox(width: 10),
+                  _StatCard(
+                    label: 'รอตรวจสอบ',
+                    value: '${_countStatus(DocStatus.pending)}',
+                    valueColor: const Color(0xFFB7791F),
+                  ),
+                  const SizedBox(width: 10),
+                  _StatCard(
+                    label: 'อนุมัติแล้ว',
+                    value: '${_countStatus(DocStatus.approved)}',
+                  ),
+                  const SizedBox(width: 10),
+                  _StatCard(
+                    label: 'ไม่อนุมัติ',
+                    value: '${_countStatus(DocStatus.rejected)}',
+                    valueColor: const Color(0xFF8E2A2A),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              child: TextField(
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  hintText: 'ค้นหาชื่อหรือรหัสนักศึกษา',
+                  hintStyle: const TextStyle(color: Color(0xFFA9A0AE), fontSize: 14),
+                  prefixIcon: const Icon(Icons.search_rounded, color: kAccent),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                children: [
+                  _FilterChip(
+                    label: 'ทั้งหมด',
+                    selected: !_onlyPending,
+                    onTap: () => setState(() => _onlyPending = false),
+                  ),
+                  _FilterChip(
+                    label: 'มีเอกสารรอตรวจสอบ',
+                    selected: _onlyPending,
+                    onTap: () => setState(() => _onlyPending = true),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 2, 22, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('นักศึกษาที่ส่งเอกสาร ${_students.length} คน',
+                    style: const TextStyle(fontSize: 12, color: kTextMuted)),
+              ),
+            ),
+            Expanded(child: _buildList(list)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildList(List<_StudentGroup> list) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: kAccent));
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(_error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: kTextMuted)),
+            ),
+            TextButton(onPressed: _load, child: const Text('ลองอีกครั้ง')),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      color: kAccent,
+      onRefresh: _load,
+      child: list.isEmpty
+          ? ListView(children: const [
+              SizedBox(height: 120),
+              Center(child: Text('ไม่พบนักศึกษา', style: TextStyle(color: kTextMuted))),
+            ])
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+              itemCount: list.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, i) => _StudentCard(
+                student: list[i],
+                onTap: () => _open(list[i]),
+              ),
+            ),
+    );
+  }
+}
+
+class _StudentCard extends StatelessWidget {
+  final _StudentGroup student;
+  final VoidCallback onTap;
+
+  const _StudentCard({required this.student, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final pending = student.pending;
+    final initial = student.name.trim().isEmpty ? '?' : student.name.trim()[0];
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      elevation: 2,
+      shadowColor: const Color(0x1A7A4F86),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: kIconBg,
+                child: Text(initial,
+                    style: const TextStyle(
+                        color: kPrimary, fontSize: 18, fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF5E3D68),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${student.code ?? '-'} · ส่งเอกสาร ${student.docs.length} รายการ',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: kTextMuted),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: pending > 0
+                            ? DocStatus.pending.bg
+                            : DocStatus.approved.bg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        pending > 0 ? 'รอตรวจสอบ $pending' : 'ตรวจครบแล้ว',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: pending > 0 ? DocStatus.pending.fg : DocStatus.approved.fg,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: kAccent),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ---------- Widgets ----------
 class _StatCard extends StatelessWidget {
   final String label;
@@ -303,7 +771,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -311,7 +779,13 @@ class _StatCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: kTextMuted)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(label,
+                  maxLines: 1,
+                  style: const TextStyle(fontSize: 12, color: kTextMuted)),
+            ),
             const SizedBox(height: 2),
             Text(value,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: valueColor)),

@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const pool = require("../libs/db_pool");
 
 module.exports = {
@@ -75,7 +77,7 @@ module.exports = {
     return result;
   },
 
-  updateDocument: async ({
+    updateDocument: async ({
     documentId,
     userId,
     docType,
@@ -88,6 +90,20 @@ module.exports = {
 
     try {
       conn = await pool.getConnection();
+
+      // เช็กก่อนว่าเอกสารนี้เป็นของผู้ใช้คนนี้จริง
+      const owner = await conn.query(
+        `SELECT document_id FROM documents
+         WHERE document_id = ? AND user_id = ?`,
+        [documentId, userId],
+      );
+
+      if (owner.length === 0) {
+        return {
+          isError: true,
+          errorMessage: "ไม่พบเอกสาร หรือไม่มีสิทธิ์แก้ไขเอกสารนี้",
+        };
+      }
 
       let sql, params;
       if (filePath) {
@@ -108,8 +124,8 @@ module.exports = {
 
       const rows = await conn.query(
         `SELECT document_id, doc_type, doc_name, file_path, status, note, created_at, updated_at
- FROM documents WHERE document_id = ? AND user_id = ?`,
-        [documentId],
+         FROM documents WHERE document_id = ? AND user_id = ?`,
+        [documentId, userId],
       );
 
       result = { isError: false, data: rows[0] };
@@ -122,42 +138,51 @@ module.exports = {
     return result;
   },
 
-  deleteDocument: async ({ documentId, userId }) => {
+    deleteDocument: async ({ documentId, userId }) => {
     let conn;
     let result;
 
     try {
       conn = await pool.getConnection();
 
-      const deleteResult = await conn.query(
-        `DELETE FROM documents
-       WHERE document_id = ? AND user_id = ?`,
+      // ดึง path ไฟล์ก่อนลบแถว (เช็กเจ้าของด้วย user_id)
+      const rows = await conn.query(
+        `SELECT file_path FROM documents
+         WHERE document_id = ? AND user_id = ?`,
         [documentId, userId],
       );
 
-      console.log("========== DELETE DOCUMENT ==========");
-      console.log("documentId:", documentId);
-      console.log("userId:", userId);
-      console.log("deleteResult:", deleteResult);
-
-      if (deleteResult.affectedRows === 0) {
-        result = {
+      if (rows.length === 0) {
+        return {
           isError: true,
           errorMessage: "ไม่พบเอกสาร หรือไม่มีสิทธิ์ลบเอกสารนี้",
         };
-      } else {
-        result = {
-          isError: false,
-          errorMessage: "",
-        };
       }
+
+      const filePath = rows[0].file_path;
+
+      await conn.query(
+        `DELETE FROM documents
+         WHERE document_id = ? AND user_id = ?`,
+        [documentId, userId],
+      );
+
+      // ลบไฟล์จริงออกจากโฟลเดอร์ uploads
+      // ใช้ basename กัน path แปลก ๆ หลุดออกนอกโฟลเดอร์
+      if (filePath) {
+        const fileName = path.basename(filePath);
+        const fullPath = path.join(__dirname, "..", "uploads", fileName);
+        fs.unlink(fullPath, (err) => {
+          if (err && err.code !== "ENOENT") {
+            console.error("DELETE FILE ERROR:", err.message);
+          }
+        });
+      }
+
+      result = { isError: false, errorMessage: "" };
     } catch (error) {
       console.error("DELETE DOCUMENT MODEL ERROR:", error);
-
-      result = {
-        isError: true,
-        errorMessage: error.message,
-      };
+      result = { isError: true, errorMessage: error.message };
     } finally {
       if (conn) conn.release();
     }
@@ -165,19 +190,20 @@ module.exports = {
     return result;
   },
   
-  getAllDocuments: async () => {
+    getAllDocuments: async () => {
     let conn;
     let result;
     try {
       conn = await pool.getConnection();
       const rows = await conn.query(`
-      SELECT document_id, user_id, doc_type, doc_name, file_path,
-             status, note, created_at, updated_at
-      FROM documents
-      ORDER BY created_at DESC`);
+      SELECT d.document_id, d.user_id, d.doc_type, d.doc_name, d.file_path,
+             d.status, d.note, d.created_at, d.updated_at,
+             sp.student_code, sp.prefix, sp.first_name, sp.last_name
+      FROM documents d
+      LEFT JOIN student_profiles sp ON sp.user_id = d.user_id
+      ORDER BY d.created_at DESC`);
       result = { isError: false, data: rows };
     } catch (error) {
-      //result = { isError: false === true, errorMessage: error.message };
       result = { isError: true, errorMessage: error.message };
     } finally {
       if (conn) conn.release();

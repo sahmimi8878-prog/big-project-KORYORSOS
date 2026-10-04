@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:my_app/screen/booking_list_screen.dart';
+import 'package:my_app/screen/student/profile_screen.dart';
 
 import '../../config/app_colors.dart';
 import '../../config/app_config.dart';
@@ -49,9 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = jsonDecode(response.body);
 
       if (result['isError'] == true) {
-        throw Exception(
-          result['errorMessage'] ?? 'ไม่สามารถโหลดข้อมูลได้',
-        );
+        throw Exception(result['errorMessage'] ?? 'ไม่สามารถโหลดข้อมูลได้');
       }
 
       final data = result['data'];
@@ -118,9 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openProfile() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
 
     // กลับมาแล้วโหลดใหม่ เผื่อเปลี่ยนรูป/แก้ข้อมูลในหน้าโปรไฟล์
@@ -217,81 +215,79 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const SizedBox(
               height: 100,
               child: Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xffeba6d0),
-                ),
+                child: CircularProgressIndicator(color: Color(0xffeba6d0)),
               ),
             )
           : _errorMessage.isNotEmpty
-              ? Column(
-                  children: [
-                    const Icon(
-                      Icons.cloud_off_outlined,
-                      size: 42,
-                      color: Colors.redAccent,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _errorMessage,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                    TextButton(
-                      onPressed: _loadProfile,
-                      child: const Text('ลองใหม่'),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    _avatar(),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'สวัสดี 👋',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xff8b6fa3),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _fullName(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xffffeaf5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'รหัส ${_value('student_code')}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xffa875b7),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          ? Column(
+              children: [
+                const Icon(
+                  Icons.cloud_off_outlined,
+                  size: 42,
+                  color: Colors.redAccent,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+                TextButton(
+                  onPressed: _loadProfile,
+                  child: const Text('ลองใหม่'),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                _avatar(),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'สวัสดี 👋',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xff8b6fa3),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _fullName(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffffeaf5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'รหัส ${_value('student_code')}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xffa875b7),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -329,10 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
               ),
@@ -358,10 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(icon, size: 19, color: const Color(0xffb47aaa)),
           ),
           const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
-          ),
+          Text(title, style: const TextStyle(fontSize: 13, color: Colors.grey)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -397,13 +387,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _infoRow(Icons.badge_outlined, 'รหัสนักศึกษา', _value('student_code')),
+          _infoRow(
+            Icons.badge_outlined,
+            'รหัสนักศึกษา',
+            _value('student_code'),
+          ),
           _infoRow(Icons.account_balance_outlined, 'คณะ', _value('faculty')),
           _infoRow(Icons.menu_book_outlined, 'สาขา', _value('major')),
         ],
       ),
     );
   }
+
 
   // ==================================================
   // Build
@@ -415,20 +410,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       extendBody: true,
-      bottomNavigationBar: CustomNavBar(
-        currentIndex: 0,
-        onTap: _onNavTap,
-      ),
+      bottomNavigationBar: CustomNavBar(currentIndex: 0, onTap: _onNavTap),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xfff8d7f3),
-              Color(0xffeef2ff),
-              Colors.white,
-            ],
+            colors: [Color(0xfff8d7f3), Color(0xffeef2ff), Colors.white],
           ),
         ),
         child: SafeArea(
@@ -472,15 +460,67 @@ class _HomeScreenState extends State<HomeScreen> {
                 // const SizedBox(height: 16),
                 // BookingSummaryCard(),
                 // ==================================================
-
                 const SizedBox(height: 22),
 
-                MenuCard(
-                  title: 'เอกสาร',
-                  image: 'assets/images/Mee.jpg',
-                  color: const Color(0xfffaefef),
-                  imageLeft: false,
-                ),
+                Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    color: const Color(0xffffeef8),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Row(
+        children: [
+          Icon(
+            Icons.description,
+            size: 30,
+            color: Color(0xff9b65a8),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'ยื่นเอกสาร',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 10),
+
+      const Text(
+        'ส่งเอกสารประกอบการกู้ยืม และตรวจสอบสถานะเอกสาร',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+        ),
+      ),
+
+      const SizedBox(height: 15),
+
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const DocumentListScreen(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.upload_file),
+          label: const Text('ยื่นเอกสาร'),
+        ),
+      ),
+    ],
+  ),
+),
 
                 const SizedBox(height: 22),
 
