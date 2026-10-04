@@ -9,6 +9,9 @@ import '../../widgets/menu_card__widget.dart';
 import '../../widgets/navbar.dart';
 import '../booking_list_screen.dart';
 import 'profile_screen.dart';
+import '../booking_calendar_screen.dart';
+import '../document/document_list_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
