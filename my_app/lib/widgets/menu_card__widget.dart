@@ -10,6 +10,8 @@ class MenuCard extends StatefulWidget {
   final String? status; // ข้อความสถานะในป้ายสีขาว เช่น คิวถัดไปของผู้ใช้
   final IconData? statusIcon;
   final double titleSize; // ขนาดตัวอักษรชื่อการ์ด
+  final IconData?
+  leadingIcon; // ไอคอนในกล่องชิดซ้ายสุด (ถ้าใส่ ข้อความจะชิดซ้าย)
 
   const MenuCard({
     super.key,
@@ -22,6 +24,7 @@ class MenuCard extends StatefulWidget {
     this.status,
     this.statusIcon,
     this.titleSize = 28,
+    this.leadingIcon,
   });
 
   @override
@@ -35,14 +38,19 @@ class _MenuCardState extends State<MenuCard> {
   Widget build(BuildContext context) {
     // ตัวหนังสืออยู่ฝั่งตรงข้ามรูป
     final bool hasImage = widget.image != null;
-    final CrossAxisAlignment textAlign = !hasImage
-        ? CrossAxisAlignment.center
-        : (widget.imageLeft
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start);
-    final TextAlign textAlignment = !hasImage
-        ? TextAlign.center
-        : (widget.imageLeft ? TextAlign.right : TextAlign.left);
+    final bool hasLeading = widget.leadingIcon != null;
+    final CrossAxisAlignment textAlign = hasLeading
+        ? CrossAxisAlignment.start
+        : (!hasImage
+              ? CrossAxisAlignment.center
+              : (widget.imageLeft
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start));
+    final TextAlign textAlignment = hasLeading
+        ? TextAlign.left
+        : (!hasImage
+              ? TextAlign.center
+              : (widget.imageLeft ? TextAlign.right : TextAlign.left));
 
     final Widget text = Expanded(
       child: Column(
@@ -148,6 +156,23 @@ class _MenuCardState extends State<MenuCard> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                if (hasLeading) ...[
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      widget.leadingIcon,
+                      size: 34,
+                      color: const Color(0xffb0529a),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+
                 if (hasImage && widget.imageLeft) ...[
                   Image.asset(widget.image!, height: 80),
                   const SizedBox(width: 16),

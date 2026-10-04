@@ -505,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: 'การจอง',
                   subtitle: 'จองคิวเพื่อนำเอกสารกู้ยืม กยศ. ไปยื่น',
                   titleSize: 22,
+                  leadingIcon: Icons.calendar_month_rounded,
                   status: _bookingLocation == null
                       ? null
                       : 'สถานที่: $_bookingLocation',
