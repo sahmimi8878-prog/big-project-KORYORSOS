@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../utils/data_utils.dart';
+import 'booking_date_picker_dialog.dart';
 import 'time_slot_widget.dart';
 
 /// Widget ลูกสำหรับเลือกวันที่ + ช่วงเวลา (ปุ่มวันที่คู่กับปุ่มเวลา)
@@ -15,8 +16,13 @@ class DateTimePickerWidget extends StatelessWidget {
     required this.slots,
     required this.onDateChanged,
     required this.onTimeChanged,
+    this.bookedDates = const {},
+    this.openDates,
   });
 
+  final Set<DateTime>? openDates; // วันที่เปิดรับการจอง (null = เลือกได้ทุกวัน)
+
+  final Set<DateTime> bookedDates; // วันที่ผู้ใช้จองไปแล้ว (แสดงในปฏิทิน)
   final DateTime selectedDate;
   final String? selectedTime;
   final List<Map<String, dynamic>> slots; // {time, remaining, isBreak?}
@@ -28,11 +34,12 @@ class DateTimePickerWidget extends StatelessWidget {
     final DateTime now = DateTime.now();
     final DateTime firstDate = selectedDate.isBefore(now) ? selectedDate : now;
 
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showBookingDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: firstDate,
-      lastDate: DateTime(2100),
+      bookedDates: bookedDates,
+      openDates: openDates,
     );
 
     if (picked != null) {

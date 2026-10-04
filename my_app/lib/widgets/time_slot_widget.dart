@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
- 
+
 /// Widget ลูกสำหรับเลือกช่วงเวลา
 /// ใช้เทคนิคเดียวกับ DateTimePickerWidget ใน workshop:
 /// - รับค่าปัจจุบัน (selectedTime) จาก parent
 /// - แจ้งค่าที่ผู้ใช้เลือกใหม่กลับไปยัง parent ผ่าน callback (onTimeSelected)
 class TimeSlotWidget extends StatelessWidget {
   final String? selectedTime;
-  final List<Map<String, dynamic>> slots; // {time, remaining}
+  final List<Map<String, dynamic>> slots; // {time, remaining, isBreak?}
   final ValueChanged<String> onTimeSelected;
- 
+
   const TimeSlotWidget({
     super.key,
     required this.selectedTime,
     required this.slots,
     required this.onTimeSelected,
   });
- 
+
   @override
   Widget build(BuildContext context) {
     return Wrap(
@@ -25,14 +25,17 @@ class TimeSlotWidget extends StatelessWidget {
       children: slots.map((slot) {
         final String time = slot['time'];
         final int remaining = slot['remaining'];
+        final bool isBreak = slot['isBreak'] == true;
         final bool isFull = remaining <= 0;
         final bool isSelected = selectedTime == time;
- 
+
         return InkWell(
           onTap: isFull
               ? null
               : () {
-                  onTimeSelected(time); // เรียก callback กลับไปยัง BookingScreen
+                  onTimeSelected(
+                    time,
+                  ); // เรียก callback กลับไปยัง BookingScreen
                 },
           borderRadius: BorderRadius.circular(14),
           child: Container(
@@ -63,7 +66,11 @@ class TimeSlotWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isFull ? 'เต็ม' : 'เหลือ $remaining คิว',
+                  isBreak
+                      ? 'พักเที่ยง'
+                      : (slot['isClosed'] == true
+                            ? 'ปิดรับ'
+                            : (isFull ? 'เต็ม' : 'เหลือ $remaining คิว')),
                   style: TextStyle(
                     fontSize: 12,
                     color: isFull

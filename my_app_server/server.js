@@ -912,23 +912,8 @@ app.delete(
         });
       }
 
-      const result = await userModel.deleteUser(req.params.userId);
-
-      res.json(result);
-    } catch (error) {
-      console.error("DELETE USER ERROR:", error);
-
-      res.status(500).json({
-        isError: true,
-
-        errorMessage: error.message,
-      });
-    }
-  },
-);
-
-//app.use('/uploads', express.static(uploadDir));
-
+    res.json(await userModel.deleteUser(req.params.userId));
+});
 app.listen(port, host, () => {
   console.log(`Server running at http://${host}:${port}/`);
 });

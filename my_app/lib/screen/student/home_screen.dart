@@ -1,18 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:my_app/screen/booking_list_screen.dart';
-import 'package:my_app/screen/student/profile_screen.dart';
 
 import '../../config/app_colors.dart';
 import '../../config/app_config.dart';
 import '../../utils/app_api.dart';
 import '../../widgets/menu_card__widget.dart';
 import '../../widgets/navbar.dart';
-import '../officer/user/user_screen.dart';
-import 'package:my_app/models/document_model.dart';
-import 'package:my_app/service/document_service.dart';
-import 'package:my_app/screen/document/document_list_screen.dart';
+import '../booking_list_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,11 +21,32 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   Map<String, dynamic> _user = {};
+  String? _bookingLocation; // สถานที่ยื่นเอกสารของวันที่เปิดรับใกล้ที่สุด
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadBookingLocation();
+  }
+
+  // ดึงสถานที่ยื่นเอกสารจากวันที่เปิดรับการจองที่ใกล้ที่สุด ใช้แสดงในการ์ด "การจอง"
+  Future<void> _loadBookingLocation() async {
+    try {
+      final response = await AppAPI.get('/bookings/open-days');
+      final json = jsonDecode(response.body);
+
+      if (!mounted || json['isError'] == true || json['data'] is! List) return;
+
+      final days = json['data'] as List;
+      final String location = days.isEmpty
+          ? ''
+          : (days.first['location'] ?? '').toString().trim();
+
+      setState(() => _bookingLocation = location.isEmpty ? null : location);
+    } catch (e) {
+      // โหลดไม่ได้ก็แสดงการ์ดโดยไม่มีสถานที่
+    }
   }
 
   // silent = true: โหลดใหม่เงียบๆ ไม่โชว์ loading (ใช้ตอนกลับจากหน้าโปรไฟล์)
@@ -131,6 +148,14 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (index) {
       case 0:
         // อยู่หน้า Home อยู่แล้ว
+        break;
+      case 3:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const BookingCalendarScreen(),
+          ),
+        );
         break;
       case 4:
         _openProfile();
@@ -526,16 +551,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 MenuCard(
                   title: 'การจอง',
-                  image: 'assets/images/Kame.jpg',
-                  color: const Color(0xffeba6d0),
-                  imageLeft: true,
-                  onTap: () {
-                    Navigator.push(
+                  subtitle: 'จองคิวเพื่อนำเอกสารกู้ยืม กยศ. ไปยื่น',
+                  titleSize: 22,
+                  leadingIcon: Icons.calendar_month_rounded,
+                  status: _bookingLocation == null
+                      ? null
+                      : 'สถานที่: $_bookingLocation',
+                  statusIcon: Icons.location_on_outlined,
+                  color: const Color(0xfff6cde3),
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const BookingListScreen(),
                       ),
                     );
+
+                    _loadBookingLocation();
                   },
                 ),
               ],
