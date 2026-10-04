@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/screen/officer/document/officer_document_screen.dart';
+import 'package:my_app/utils/auth_utils.dart';
 
 import '../../widgets/user_role_chart.dart';
 import 'booking/booking_manage_screen.dart';
 import 'user/user_screen.dart';
-import '../../utils/auth_utils.dart';
 
 class OfficerHomeScreen extends StatefulWidget {
   const OfficerHomeScreen({super.key});
@@ -119,6 +120,10 @@ class _OfficerHomeScreenState extends State<OfficerHomeScreen> {
                   title: 'จัดการเอกสาร',
                   subtitle: 'แสดง เพิ่ม แก้ไข และจัดการเอกสาร',
                   onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OfficerDocumentScreen()),
+                    );
                     // เดี๋ยวเชื่อมหน้าเอกสารตรงนี้
                   },
                 ),

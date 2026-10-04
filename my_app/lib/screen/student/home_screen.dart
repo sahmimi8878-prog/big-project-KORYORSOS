@@ -1,20 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:my_app/screen/student/profile_screen.dart';
 
 import '../../config/app_colors.dart';
 import '../../config/app_config.dart';
 import '../../utils/app_api.dart';
 import '../../widgets/menu_card__widget.dart';
 import '../../widgets/navbar.dart';
-import '../officer/user/user_screen.dart';
-import '../booking_calendar_screen.dart';
 import '../booking_list_screen.dart';
-
-import 'package:my_app/models/document_model.dart';
-import 'package:my_app/service/document_service.dart';
-import 'package:my_app/screen/document/document_list_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -430,6 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
   // ==================================================
   // Build
   // ==================================================
@@ -492,12 +487,65 @@ class _HomeScreenState extends State<HomeScreen> {
                 // ==================================================
                 const SizedBox(height: 22),
 
-                MenuCard(
-                  title: 'เอกสาร',
-                  image: 'assets/images/Mee.jpg',
-                  color: const Color(0xfffaefef),
-                  imageLeft: false,
-                ),
+                Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    color: const Color(0xffffeef8),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Row(
+        children: [
+          Icon(
+            Icons.description,
+            size: 30,
+            color: Color(0xff9b65a8),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'ยื่นเอกสาร',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 10),
+
+      const Text(
+        'ส่งเอกสารประกอบการกู้ยืม และตรวจสอบสถานะเอกสาร',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+        ),
+      ),
+
+      const SizedBox(height: 15),
+
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const DocumentListScreen(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.upload_file),
+          label: const Text('ยื่นเอกสาร'),
+        ),
+      ),
+    ],
+  ),
+),
 
                 const SizedBox(height: 22),
 
