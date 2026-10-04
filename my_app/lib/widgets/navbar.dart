@@ -39,15 +39,13 @@ class CustomNavBar extends StatelessWidget {
           showSelectedLabels: true,
           showUnselectedLabels: false,
           selectedFontSize: 11,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_rounded),
               label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.upload_file_rounded),
-              label: 'Portfolio',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.description_rounded),
