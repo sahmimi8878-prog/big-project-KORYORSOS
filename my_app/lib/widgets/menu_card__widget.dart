@@ -12,6 +12,9 @@ class MenuCard extends StatefulWidget {
   final double titleSize; // ขนาดตัวอักษรชื่อการ์ด
   final IconData?
   leadingIcon; // ไอคอนในกล่องชิดซ้ายสุด (ถ้าใส่ ข้อความจะชิดซ้าย)
+  final String? buttonLabel; // ถ้าใส่ จะมีปุ่มกดใต้ข้อความ
+  final IconData? buttonIcon; // ไอคอนในปุ่ม (ไม่ใส่ = ปุ่มข้อความล้วน)
+  final VoidCallback? onButtonTap; // callback ตอนกดปุ่ม
 
   const MenuCard({
     super.key,
@@ -25,6 +28,9 @@ class MenuCard extends StatefulWidget {
     this.statusIcon,
     this.titleSize = 28,
     this.leadingIcon,
+    this.buttonLabel,
+    this.buttonIcon,
+    this.onButtonTap,
   });
 
   @override
@@ -106,12 +112,31 @@ class _MenuCardState extends State<MenuCard> {
               ),
             ),
           ],
+          if (widget.buttonLabel != null) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: widget.buttonIcon != null
+                  ? ElevatedButton.icon(
+                      onPressed: widget.onButtonTap,
+                      icon: Icon(widget.buttonIcon),
+                      label: Text(widget.buttonLabel!),
+                    )
+                  : ElevatedButton(
+                      onPressed: widget.onButtonTap,
+                      child: Text(widget.buttonLabel!),
+                    ),
+            ),
+          ],
         ],
       ),
     );
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
+      // เป็นมือเฉพาะตอนการ์ดกดได้จริง
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
 
       onEnter: (_) {
         setState(() {
