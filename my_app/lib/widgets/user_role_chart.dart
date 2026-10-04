@@ -134,22 +134,28 @@ class _UserRoleChartState extends State<UserRoleChart> {
             ),
           ),
           barGroups: [
-            BarChartGroupData(x: 0, barRods: [
-              BarChartRodData(
-                toY: students.toDouble(),
-                color: const Color(0xffeba6d0),
-                width: 36,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ]),
-            BarChartGroupData(x: 1, barRods: [
-              BarChartRodData(
-                toY: officers.toDouble(),
-                color: const Color(0xff8B6FA3),
-                width: 36,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ]),
+            BarChartGroupData(
+              x: 0,
+              barRods: [
+                BarChartRodData(
+                  toY: students.toDouble(),
+                  color: const Color(0xffeba6d0),
+                  width: 36,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ],
+            ),
+            BarChartGroupData(
+              x: 1,
+              barRods: [
+                BarChartRodData(
+                  toY: officers.toDouble(),
+                  color: const Color(0xff8B6FA3),
+                  width: 36,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ],
+            ),
           ],
         ),
       ),

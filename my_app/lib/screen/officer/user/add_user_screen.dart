@@ -9,10 +9,7 @@ class AddUserScreen extends StatefulWidget {
   // ถ้ามีข้อมูล = แก้ไขผู้ใช้
   final Map<String, dynamic>? user;
 
-  const AddUserScreen({
-    super.key,
-    this.user,
-  });
+  const AddUserScreen({super.key, this.user});
 
   @override
   State<AddUserScreen> createState() => _AddUserScreenState();
@@ -60,36 +57,27 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     _emailController.text = user['email']?.toString() ?? '';
 
-    _studentCodeController.text =
-        user['student_code']?.toString() ?? '';
+    _studentCodeController.text = user['student_code']?.toString() ?? '';
 
-    _citizenIdController.text =
-        user['citizen_id']?.toString() ?? '';
+    _citizenIdController.text = user['citizen_id']?.toString() ?? '';
 
     _selectedPrefix = user['prefix']?.toString();
 
-    _firstNameController.text =
-        user['first_name']?.toString() ?? '';
+    _firstNameController.text = user['first_name']?.toString() ?? '';
 
-    _lastNameController.text =
-        user['last_name']?.toString() ?? '';
+    _lastNameController.text = user['last_name']?.toString() ?? '';
 
-    _phoneController.text =
-        user['phone']?.toString() ?? '';
+    _phoneController.text = user['phone']?.toString() ?? '';
 
-    _facultyController.text =
-        user['faculty']?.toString() ?? '';
+    _facultyController.text = user['faculty']?.toString() ?? '';
 
-    _majorController.text =
-        user['major']?.toString() ?? '';
+    _majorController.text = user['major']?.toString() ?? '';
 
     // year อาจมาเป็น int หรือ String
-    _selectedYear =
-        int.tryParse(user['year']?.toString() ?? '');
+    _selectedYear = int.tryParse(user['year']?.toString() ?? '');
 
     // role
-    _selectedRole =
-        int.tryParse(user['role_id']?.toString() ?? '') ?? 1;
+    _selectedRole = int.tryParse(user['role_id']?.toString() ?? '') ?? 1;
 
     // GPA
     final gpa = user['GPA'] ?? user['gpa'];
@@ -100,9 +88,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     // วันเกิด
     if (user['birth_date'] != null) {
-      _birthDate = DateTime.tryParse(
-        user['birth_date'].toString(),
-      );
+      _birthDate = DateTime.tryParse(user['birth_date'].toString());
     }
   }
 
@@ -127,12 +113,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     final picked = await showDatePicker(
       context: context,
-      initialDate: _birthDate ??
-          DateTime(
-            now.year - 18,
-            now.month,
-            now.day,
-          ),
+      initialDate: _birthDate ?? DateTime(now.year - 18, now.month, now.day),
       firstDate: DateTime(1950),
       lastDate: now,
       helpText: "เลือกวันเกิด",
@@ -194,9 +175,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       "faculty": _facultyController.text.trim(),
       "major": _majorController.text.trim(),
       "year": _selectedYear,
-      "gpa": double.tryParse(
-        _gpaController.text.trim(),
-      ),
+      "gpa": double.tryParse(_gpaController.text.trim()),
       "role_id": _selectedRole,
     };
 
@@ -236,9 +215,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         final userId = widget.user!['user_id'];
 
         response = await http.put(
-          Uri.parse(
-            'http://127.0.0.1:3000/api/users/$userId',
-          ),
+          Uri.parse('http://127.0.0.1:3000/api/users/$userId'),
           headers: headers,
           body: jsonEncode(data),
         );
@@ -248,9 +225,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         // ==========================================
 
         response = await http.post(
-          Uri.parse(
-            'http://127.0.0.1:3000/api/users',
-          ),
+          Uri.parse('http://127.0.0.1:3000/api/users'),
           headers: headers,
           body: jsonEncode(data),
         );
@@ -268,14 +243,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
       if (!isError) {
         _showMessage(
-          isEdit
-              ? "แก้ไขข้อมูลผู้ใช้สำเร็จ ✨"
-              : "เพิ่มผู้ใช้สำเร็จ ✨",
+          isEdit ? "แก้ไขข้อมูลผู้ใช้สำเร็จ ✨" : "เพิ่มผู้ใช้สำเร็จ ✨",
         );
 
-        await Future.delayed(
-          const Duration(milliseconds: 800),
-        );
+        await Future.delayed(const Duration(milliseconds: 800));
 
         if (!mounted) return;
 
@@ -283,9 +254,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       } else {
         _showMessage(
           json["errorMessage"] ??
-              (isEdit
-                  ? "แก้ไขข้อมูลไม่สำเร็จ"
-                  : "เพิ่มผู้ใช้ไม่สำเร็จ"),
+              (isEdit ? "แก้ไขข้อมูลไม่สำเร็จ" : "เพิ่มผู้ใช้ไม่สำเร็จ"),
         );
       }
     } catch (e) {
@@ -297,9 +266,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
       print(e);
 
-      _showMessage(
-        "เชื่อมต่อ server ไม่ได้",
-      );
+      _showMessage("เชื่อมต่อ server ไม่ได้");
     }
   }
 
@@ -315,9 +282,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         content: Text(message),
         backgroundColor: const Color(0xff8B6FA3),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -359,39 +324,25 @@ class _AddUserScreenState extends State<AddUserScreen> {
       obscureText: obscureText,
       maxLength: maxLength,
       validator: validator,
-      style: const TextStyle(
-        fontSize: 14,
-      ),
+      style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
         counterText: "",
-        prefixIcon: Icon(
-          icon,
-          color: const Color(0xff8B6FA3),
-          size: 20,
-        ),
+        prefixIcon: Icon(icon, color: const Color(0xff8B6FA3), size: 20),
         filled: true,
         fillColor: const Color(0xffeef2ff),
-        labelStyle: const TextStyle(
-          color: Color(0xff8B6FA3),
-          fontSize: 13,
-        ),
+        labelStyle: const TextStyle(color: Color(0xff8B6FA3), fontSize: 13),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Color(0xffeba6d0),
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: Color(0xffeba6d0), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Colors.redAccent,
-          ),
+          borderSide: const BorderSide(color: Colors.redAccent),
         ),
       ),
     );
@@ -405,32 +356,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          isEdit
-              ? "แก้ไขข้อมูลผู้ใช้"
-              : "เพิ่มข้อมูลผู้ใช้",
-        ),
+        title: Text(isEdit ? "แก้ไขข้อมูลผู้ใช้" : "เพิ่มข้อมูลผู้ใช้"),
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xfff8d7f3),
-              Color(0xffeef2ff),
-              Colors.white,
-            ],
+            colors: [Color(0xfff8d7f3), Color(0xffeef2ff), Colors.white],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              40,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             child: Form(
               key: _formKey,
               child: Column(
@@ -442,12 +380,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [
                         BoxShadow(
-                          color: Color.fromRGBO(
-                            120,
-                            90,
-                            160,
-                            0.28,
-                          ),
+                          color: Color.fromRGBO(120, 90, 160, 0.28),
                           blurRadius: 24,
                           offset: Offset(0, 10),
                         ),
@@ -458,7 +391,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         // =================================================
                         // บัญชีผู้ใช้
                         // =================================================
-
                         _sectionTitle("บัญชีผู้ใช้"),
 
                         const SizedBox(height: 12),
@@ -467,11 +399,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           controller: _emailController,
                           label: "อีเมล",
                           icon: Icons.email_outlined,
-                          keyboardType:
-                              TextInputType.emailAddress,
+                          keyboardType: TextInputType.emailAddress,
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return "กรุณากรอกอีเมล";
                             }
 
@@ -493,8 +423,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             icon: Icons.lock_outline,
                             obscureText: true,
                             validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty) {
+                              if (value == null || value.isEmpty) {
                                 return "กรุณากรอกรหัสผ่าน";
                               }
 
@@ -519,23 +448,18 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               color: Color(0xff8B6FA3),
                             ),
                             filled: true,
-                            fillColor:
-                                const Color(0xffeef2ff),
+                            fillColor: const Color(0xffeef2ff),
                             labelStyle: const TextStyle(
                               color: Color(0xff8B6FA3),
                               fontSize: 13,
                             ),
                             border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(14),
                               borderSide: BorderSide.none,
                             ),
                           ),
                           items: const [
-                            DropdownMenuItem(
-                              value: 1,
-                              child: Text("นักศึกษา"),
-                            ),
+                            DropdownMenuItem(value: 1, child: Text("นักศึกษา")),
                             DropdownMenuItem(
                               value: 2,
                               child: Text("เจ้าหน้าที่"),
@@ -553,48 +477,33 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         // =================================================
                         // ข้อมูลส่วนตัว / ข้อมูลนักศึกษา
                         // =================================================
-
                         _sectionTitle("ข้อมูลนักศึกษา"),
 
                         const SizedBox(height: 12),
 
                         Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               flex: 2,
-                              child:
-                                  DropdownButtonFormField<String>(
+                              child: DropdownButtonFormField<String>(
                                 value: _selectedPrefix,
                                 decoration: InputDecoration(
                                   labelText: "คำนำหน้า",
                                   filled: true,
-                                  fillColor:
-                                      const Color(0xffeef2ff),
-                                  labelStyle:
-                                      const TextStyle(
-                                    color:
-                                        Color(0xff8B6FA3),
+                                  fillColor: const Color(0xffeef2ff),
+                                  labelStyle: const TextStyle(
+                                    color: Color(0xff8B6FA3),
                                     fontSize: 13,
                                   ),
                                   border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(
-                                      14,
-                                    ),
-                                    borderSide:
-                                        BorderSide.none,
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide.none,
                                   ),
                                 ),
-                                items: const [
-                                  "นาย",
-                                  "นาง",
-                                  "นางสาว",
-                                ]
+                                items: const ["นาย", "นาง", "นางสาว"]
                                     .map(
-                                      (p) =>
-                                          DropdownMenuItem(
+                                      (p) => DropdownMenuItem(
                                         value: p,
                                         child: Text(p),
                                       ),
@@ -602,8 +511,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                     .toList(),
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedPrefix =
-                                        value;
+                                    _selectedPrefix = value;
                                   });
                                 },
                                 validator: (value) {
@@ -621,13 +529,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             Expanded(
                               flex: 3,
                               child: _buildTextField(
-                                controller:
-                                    _firstNameController,
+                                controller: _firstNameController,
                                 label: "ชื่อ",
-                                icon:
-                                    Icons.badge_outlined,
-                                validator:
-                                    _requiredValidator,
+                                icon: Icons.badge_outlined,
+                                validator: _requiredValidator,
                               ),
                             ),
                           ],
@@ -645,25 +550,20 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         const SizedBox(height: 14),
 
                         _buildTextField(
-                          controller:
-                              _studentCodeController,
+                          controller: _studentCodeController,
                           label: "รหัสนักศึกษา",
                           icon: Icons.numbers_outlined,
-                          keyboardType:
-                              TextInputType.number,
+                          keyboardType: TextInputType.number,
                           validator: _requiredValidator,
                         ),
 
                         const SizedBox(height: 14),
 
                         _buildTextField(
-                          controller:
-                              _citizenIdController,
+                          controller: _citizenIdController,
                           label: "เลขบัตรประชาชน",
-                          icon:
-                              Icons.credit_card_outlined,
-                          keyboardType:
-                              TextInputType.number,
+                          icon: Icons.credit_card_outlined,
+                          keyboardType: TextInputType.number,
                           maxLength: 13,
                           validator: _requiredValidator,
                         ),
@@ -673,39 +573,31 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         // วันเกิด
                         InkWell(
                           onTap: _pickBirthDate,
-                          borderRadius:
-                              BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(14),
                           child: Container(
                             width: double.infinity,
-                            padding:
-                                const EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 16,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  const Color(0xffeef2ff),
-                              borderRadius:
-                                  BorderRadius.circular(14),
+                              color: const Color(0xffeef2ff),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color:
-                                    const Color(0xffe0d4f7),
+                                color: const Color(0xffe0d4f7),
                               ),
                             ),
                             child: Row(
                               children: [
                                 const Icon(
                                   Icons.cake_outlined,
-                                  color:
-                                      Color(0xff8B6FA3),
+                                  color: Color(0xff8B6FA3),
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
                                   _birthDate == null
                                       ? "เลือกวันเกิด"
-                                      : _formatDate(
-                                          _birthDate!,
-                                        ),
+                                      : _formatDate(_birthDate!),
                                   style: TextStyle(
                                     color: _birthDate == null
                                         ? Colors.grey
@@ -724,8 +616,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           controller: _phoneController,
                           label: "เบอร์โทรศัพท์",
                           icon: Icons.phone_outlined,
-                          keyboardType:
-                              TextInputType.phone,
+                          keyboardType: TextInputType.phone,
                           validator: _requiredValidator,
                         ),
 
@@ -750,47 +641,31 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         const SizedBox(height: 14),
 
                         Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child:
-                                  DropdownButtonFormField<int>(
+                              child: DropdownButtonFormField<int>(
                                 value: _selectedYear,
                                 decoration: InputDecoration(
                                   labelText: "ชั้นปี",
                                   filled: true,
-                                  fillColor:
-                                      const Color(0xffeef2ff),
+                                  fillColor: const Color(0xffeef2ff),
                                   border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(
-                                      14,
-                                    ),
-                                    borderSide:
-                                        BorderSide.none,
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide.none,
                                   ),
                                 ),
-                                items: const [
-                                  1,
-                                  2,
-                                  3,
-                                  4,
-                                ]
+                                items: const [1, 2, 3, 4]
                                     .map(
-                                      (y) =>
-                                          DropdownMenuItem(
+                                      (y) => DropdownMenuItem(
                                         value: y,
-                                        child: Text(
-                                          "ปี $y",
-                                        ),
+                                        child: Text("ปี $y"),
                                       ),
                                     )
                                     .toList(),
                                 onChanged: (value) {
                                   setState(() {
-                                    _selectedYear =
-                                        value;
+                                    _selectedYear = value;
                                   });
                                 },
                                 validator: (value) {
@@ -809,29 +684,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               child: _buildTextField(
                                 controller: _gpaController,
                                 label: "GPA",
-                                icon:
-                                    Icons.grade_outlined,
+                                icon: Icons.grade_outlined,
                                 keyboardType:
-                                    const TextInputType
-                                        .numberWithOptions(
-                                  decimal: true,
-                                ),
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 validator: (value) {
-                                  if (value == null ||
-                                      value
-                                          .trim()
-                                          .isEmpty) {
+                                  if (value == null || value.trim().isEmpty) {
                                     return "กรอก GPA";
                                   }
 
-                                  final gpa =
-                                      double.tryParse(
-                                    value.trim(),
-                                  );
+                                  final gpa = double.tryParse(value.trim());
 
-                                  if (gpa == null ||
-                                      gpa < 0 ||
-                                      gpa > 4) {
+                                  if (gpa == null || gpa < 0 || gpa > 4) {
                                     return "GPA ต้อง 0.00-4.00";
                                   }
 
@@ -850,19 +715,15 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   // =================================================
                   // ปุ่ม
                   // =================================================
-
                   SizedBox(
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed:
-                          _isLoading ? null : _saveUser,
+                      onPressed: _isLoading ? null : _saveUser,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xffeba6d0),
+                        backgroundColor: const Color(0xffeba6d0),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(18),
                         ),
                         elevation: 6,
                       ),
@@ -870,20 +731,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child:
-                                  CircularProgressIndicator(
+                              child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
                                 color: Colors.white,
                               ),
                             )
                           : Text(
-                              isEdit
-                                  ? "บันทึกการแก้ไข"
-                                  : "เพิ่มผู้ใช้",
+                              isEdit ? "บันทึกการแก้ไข" : "เพิ่มผู้ใช้",
                               style: const TextStyle(
                                 fontSize: 16,
-                                fontWeight:
-                                    FontWeight.bold,
+                                fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),

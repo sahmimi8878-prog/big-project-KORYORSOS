@@ -1,14 +1,20 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:my_app/screen/student/profile_screen.dart';
 
 import '../../config/app_colors.dart';
 import '../../config/app_config.dart';
 import '../../utils/app_api.dart';
 import '../../widgets/menu_card__widget.dart';
 import '../../widgets/navbar.dart';
+import '../officer/user/user_screen.dart';
+import '../booking_calendar_screen.dart';
 import '../booking_list_screen.dart';
-import 'profile_screen.dart';
+
+import 'package:my_app/models/document_model.dart';
+import 'package:my_app/service/document_service.dart';
+import 'package:my_app/screen/document/document_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,11 +27,32 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   Map<String, dynamic> _user = {};
+  String? _bookingLocation; // สถานที่ยื่นเอกสารของวันที่เปิดรับใกล้ที่สุด
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadBookingLocation();
+  }
+
+  // ดึงสถานที่ยื่นเอกสารจากวันที่เปิดรับการจองที่ใกล้ที่สุด ใช้แสดงในการ์ด "การจอง"
+  Future<void> _loadBookingLocation() async {
+    try {
+      final response = await AppAPI.get('/bookings/open-days');
+      final json = jsonDecode(response.body);
+
+      if (!mounted || json['isError'] == true || json['data'] is! List) return;
+
+      final days = json['data'] as List;
+      final String location = days.isEmpty
+          ? ''
+          : (days.first['location'] ?? '').toString().trim();
+
+      setState(() => _bookingLocation = location.isEmpty ? null : location);
+    } catch (e) {
+      // โหลดไม่ได้ก็แสดงการ์ดโดยไม่มีสถานที่
+    }
   }
 
   // silent = true: โหลดใหม่เงียบๆ ไม่โชว์ loading (ใช้ตอนกลับจากหน้าโปรไฟล์)
@@ -47,9 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = jsonDecode(response.body);
 
       if (result['isError'] == true) {
-        throw Exception(
-          result['errorMessage'] ?? 'ไม่สามารถโหลดข้อมูลได้',
-        );
+        throw Exception(result['errorMessage'] ?? 'ไม่สามารถโหลดข้อมูลได้');
       }
 
       final data = result['data'];
@@ -116,9 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openProfile() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
 
     // กลับมาแล้วโหลดใหม่ เผื่อเปลี่ยนรูป/แก้ข้อมูลในหน้าโปรไฟล์
@@ -131,6 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (index) {
       case 0:
         // อยู่หน้า Home อยู่แล้ว
+        break;
+      case 3:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const BookingCalendarScreen(),
+          ),
+        );
         break;
       case 4:
         _openProfile();
@@ -215,81 +246,79 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const SizedBox(
               height: 100,
               child: Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xffeba6d0),
-                ),
+                child: CircularProgressIndicator(color: Color(0xffeba6d0)),
               ),
             )
           : _errorMessage.isNotEmpty
-              ? Column(
-                  children: [
-                    const Icon(
-                      Icons.cloud_off_outlined,
-                      size: 42,
-                      color: Colors.redAccent,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _errorMessage,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                    TextButton(
-                      onPressed: _loadProfile,
-                      child: const Text('ลองใหม่'),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    _avatar(),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'สวัสดี 👋',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xff8b6fa3),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _fullName(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xffffeaf5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'รหัส ${_value('student_code')}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xffa875b7),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          ? Column(
+              children: [
+                const Icon(
+                  Icons.cloud_off_outlined,
+                  size: 42,
+                  color: Colors.redAccent,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+                TextButton(
+                  onPressed: _loadProfile,
+                  child: const Text('ลองใหม่'),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                _avatar(),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'สวัสดี 👋',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xff8b6fa3),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _fullName(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffffeaf5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'รหัส ${_value('student_code')}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xffa875b7),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -327,10 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
               ),
@@ -356,10 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(icon, size: 19, color: const Color(0xffb47aaa)),
           ),
           const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
-          ),
+          Text(title, style: const TextStyle(fontSize: 13, color: Colors.grey)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -395,7 +418,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _infoRow(Icons.badge_outlined, 'รหัสนักศึกษา', _value('student_code')),
+          _infoRow(
+            Icons.badge_outlined,
+            'รหัสนักศึกษา',
+            _value('student_code'),
+          ),
           _infoRow(Icons.account_balance_outlined, 'คณะ', _value('faculty')),
           _infoRow(Icons.menu_book_outlined, 'สาขา', _value('major')),
         ],
@@ -413,20 +440,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       extendBody: true,
-      bottomNavigationBar: CustomNavBar(
-        currentIndex: 0,
-        onTap: _onNavTap,
-      ),
+      bottomNavigationBar: CustomNavBar(currentIndex: 0, onTap: _onNavTap),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xfff8d7f3),
-              Color(0xffeef2ff),
-              Colors.white,
-            ],
+            colors: [Color(0xfff8d7f3), Color(0xffeef2ff), Colors.white],
           ),
         ),
         child: SafeArea(
@@ -470,7 +490,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 // const SizedBox(height: 16),
                 // BookingSummaryCard(),
                 // ==================================================
-
                 const SizedBox(height: 22),
 
                 MenuCard(
@@ -484,16 +503,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 MenuCard(
                   title: 'การจอง',
-                  image: 'assets/images/Kame.jpg',
-                  color: const Color(0xffeba6d0),
-                  imageLeft: true,
-                  onTap: () {
-                    Navigator.push(
+                  subtitle: 'จองคิวเพื่อนำเอกสารกู้ยืม กยศ. ไปยื่น',
+                  titleSize: 22,
+                  status: _bookingLocation == null
+                      ? null
+                      : 'สถานที่: $_bookingLocation',
+                  statusIcon: Icons.location_on_outlined,
+                  color: const Color(0xfff6cde3),
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const BookingListScreen(),
                       ),
                     );
+
+                    _loadBookingLocation();
                   },
                 ),
               ],
