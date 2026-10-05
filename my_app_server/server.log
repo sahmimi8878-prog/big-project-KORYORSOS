@@ -1,0 +1,13 @@
+Server running at http://127.0.0.1:3000/
+6d304deef2ef4526a862df76ce31d0b080aaddec3c47f5945c2deb4d44d0f26c
+{ isError: false, data: [ { email: 'gam@gmail.com' } ] }
+{
+  isError: false,
+  data: [ { user_id: 2, email: 'gam@gmail.com', role_id: 1 } ]
+}
+6d304deef2ef4526a862df76ce31d0b080aaddec3c47f5945c2deb4d44d0f26c
+{ isError: false, data: [ { email: 'gam@gmail.com' } ] }
+{
+  isError: false,
+  data: [ { user_id: 2, email: 'gam@gmail.com', role_id: 1 } ]
+}
