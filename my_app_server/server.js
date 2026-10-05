@@ -248,12 +248,12 @@ app.get('/api/documents', checkAccessToken, async (req, res) => {
 });
 
 // เจ้าหน้าที่: ดูเอกสารของทุกคน (ต้องอยู่ก่อน /:id)
-app.get('/api/admin/documents', checkAccessToken, checkOfficer, async (req, res) => {
+app.get(['/api/officer/documents', '/api/admin/documents'], checkAccessToken, checkOfficer, async (req, res) => {
     res.json(await documentModel.getAllDocuments());
 });
 
 // เจ้าหน้าที่: เปลี่ยนสถานะเอกสาร + หมายเหตุ
-app.put('/api/admin/documents/:id/status', checkAccessToken, checkOfficer, async (req, res) => {
+app.put(['/api/officer/documents/:id/status', '/api/admin/documents/:id/status'], checkAccessToken, checkOfficer, async (req, res) => {
     const { status, note } = req.body;
 
     if (!status) {
